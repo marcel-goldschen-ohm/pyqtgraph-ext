@@ -1,5 +1,5 @@
 # PyQtGraph-ext
-Collection of PyQtGraph widgets/tools.
+Collection of [PyQtGraph](https://www.pyqtgraph.org) widgets/tools.
 
 - [PyQtGraphAxisRegionItem](https://github.com/marcel-goldschen-ohm/PyQtGraph-ext/docs/PyQtGraphAxisRegionItem.md)
 - [PyQtGraphEventItem](https://github.com/marcel-goldschen-ohm/PyQtGraph-ext/docs/PyQtGraphEventItem.md)
