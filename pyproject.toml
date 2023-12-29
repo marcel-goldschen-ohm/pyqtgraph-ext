@@ -1,5 +1,5 @@
 [project]
-name = "pyqtgraph-tools"
+name = "pyqtgraph-ext"
 description = "Collection of PyQtGraph widgets/tools."
 dynamic = ["version"]
 license = {text = "MIT"}
@@ -12,6 +12,7 @@ dependencies = [
     "qtpy>=2.4.1",
     "qtawesome>=1.3.0",
     "pyqtgraph>=0.13.3",
+    "pyqt-ext>=1.1.0",
 ]
 readme = "README.md"
 keywords = ["PyQt", "PySide", "pyqtgraph"]
@@ -29,8 +30,8 @@ classifiers = [
 
 
 [project.urls]
-homepage = "https://github.com/marcel-goldschen-ohm/PyQtGraph-tools"
-repository = "https://github.com/marcel-goldschen-ohm/PyQtGraph-tools"
+homepage = "https://github.com/marcel-goldschen-ohm/PyQtGraph-ext"
+repository = "https://github.com/marcel-goldschen-ohm/PyQtGraph-ext"
 
 
 [build-system]

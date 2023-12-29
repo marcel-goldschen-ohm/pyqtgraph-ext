@@ -6,7 +6,7 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 import pyqtgraph as pg
-from pyqtgraph_tools import PlotItem
+from pyqtgraph_ext import PlotItem
 import platform
 
 
@@ -31,7 +31,7 @@ class PlotWidget(pg.PlotWidget):
 def test_live():
     import sys
     import numpy as np
-    from pyqtgraph_tools import XYDataItem
+    from pyqtgraph_ext import XYDataItem
     app = QApplication(sys.argv)
     plot = PlotWidget()
     for i in range(3):

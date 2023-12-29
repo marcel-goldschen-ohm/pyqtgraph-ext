@@ -6,7 +6,7 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 import pyqtgraph as pg
-from pyqtgraph_tools import AxisRegionItem, XAxisRegionItem, YAxisRegionItem, EventItem, XYDataItem
+from pyqtgraph_ext import AxisRegionItem, XAxisRegionItem, YAxisRegionItem, EventItem, XYDataItem
 
 
 class ViewBox(pg.ViewBox):
@@ -178,7 +178,7 @@ class ViewBox(pg.ViewBox):
 def test_live():
     import sys
     import numpy as np
-    from pyqtgraph_tools import XYDataItem
+    from pyqtgraph_ext import XYDataItem
     app = QApplication(sys.argv)
     axes = ViewBox()
     plot = pg.PlotWidget(viewBox=axes)

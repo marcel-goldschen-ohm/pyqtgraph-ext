@@ -6,7 +6,7 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 import pyqtgraph as pg
-from pyqt_tools import XYDataStyleDict, editXYDataStyle
+from pyqt_ext import XYDataStyleDict, editXYDataStyle
 
 
 class XYDataItem(pg.PlotDataItem):

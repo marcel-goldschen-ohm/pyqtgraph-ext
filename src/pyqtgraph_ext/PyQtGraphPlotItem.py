@@ -6,7 +6,7 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 import pyqtgraph as pg
-from pyqtgraph_tools import ViewBox
+from pyqtgraph_ext import ViewBox
 
 
 class PlotItem(pg.PlotItem):

@@ -6,7 +6,7 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 import pyqtgraph as pg
-from pyqtgraph_tools import AxisRegionItem
+from pyqtgraph_ext import AxisRegionItem
 
 
 class EventItem(AxisRegionItem):
