@@ -1,2 +1,2 @@
 # PyQtGraph-tools
-Custom widgets for PyQtGraph
+Collection of PyQtGraph widgets/tools.
