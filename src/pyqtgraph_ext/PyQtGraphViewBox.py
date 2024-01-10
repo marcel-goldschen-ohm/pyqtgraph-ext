@@ -178,12 +178,10 @@ class ViewBox(pg.ViewBox):
 def test_live():
     import sys
     import numpy as np
-    from pyqtgraph_ext import XYDataItem
+    from pyqtgraph_ext import PlotWidget, XYDataItem
     app = QApplication(sys.argv)
     axes = ViewBox()
-    plot = pg.PlotWidget(viewBox=axes)
-    for axis in ['left', 'bottom']:
-        plot.getAxis(axis).setPen(QColor.fromRgbF(0.15, 0.15, 0.15))
+    plot = PlotWidget(viewBox=axes)
     line = XYDataItem(y=np.random.randn(1000))
     plot.addItem(line)
     plot.setWindowTitle('pyqtgraph-tools')

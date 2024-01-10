@@ -25,7 +25,8 @@ class PlotWidget(pg.PlotWidget):
             # Fix error message due to touch events on MacOS trackpad.
             # !!! Warning: This may break touch events on a touch screen or mobile device.
             # See https://bugreports.qt.io/browse/QTBUG-103935
-            self.scene().views()[0].viewport().setAttribute(Qt.WidgetAttribute.WA_AcceptTouchEvents, False)
+            for view in self.scene().views():
+                view.viewport().setAttribute(Qt.WidgetAttribute.WA_AcceptTouchEvents, False)
 
 
 def test_live():
