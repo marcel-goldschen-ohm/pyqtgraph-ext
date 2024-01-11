@@ -39,12 +39,12 @@ class PlotGrid(pg.GraphicsLayoutWidget):
         return self._grid_layout.columnCount()
 
 def test_live():
-    from pyqtgraph_ext import PlotItem
+    from pyqtgraph_ext import Plot
     app = QApplication()
     grid = PlotGrid()
     for row in range(2):
         for col in range(3):
-            plot = PlotItem()
+            plot = Plot()
             if col == 0:
                 plot.getAxis('left').setLabel('y')
             else:
@@ -58,8 +58,7 @@ def test_live():
             grid.addItem(plot, row, col)
     grid.setWindowTitle('pyqtgraph-tools.PlotGrid')
     grid.show()
-    status = app.exec()
-    sys.exit(status)
+    app.exec()
 
 
 if __name__ == '__main__':

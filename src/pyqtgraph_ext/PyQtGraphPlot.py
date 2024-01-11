@@ -6,15 +6,15 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 import pyqtgraph as pg
-from pyqtgraph_ext import ViewBox
+from pyqtgraph_ext import View
 
 
-class PlotItem(pg.PlotItem):
+class Plot(pg.PlotItem):
     """ PlotItem with matlab color scheme and custom ViewBox. """
 
     def __init__(self, *args, **kwargs):
         if 'viewBox' not in kwargs:
-            kwargs['viewBox'] = ViewBox()
+            kwargs['viewBox'] = View()
         if 'pen' not in kwargs:
             # MATLAB color scheme
             kwargs['pen'] = pg.mkPen(QColor.fromRgbF(0.15, 0.15, 0.15), width=1)

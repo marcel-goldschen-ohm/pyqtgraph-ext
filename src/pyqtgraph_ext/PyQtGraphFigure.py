@@ -6,16 +6,16 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 import pyqtgraph as pg
-from pyqtgraph_ext import PlotItem
+from pyqtgraph_ext import Plot
 import platform
 
 
-class PlotWidget(pg.PlotWidget):
+class Figure(pg.PlotWidget):
     """ PlotWidget with matlab color scheme and CustomPlotItem. """
 
     def __init__(self, *args, **kwargs):
         if 'plotItem' not in kwargs:
-            kwargs['plotItem'] = PlotItem()
+            kwargs['plotItem'] = Plot()
         pg.PlotWidget.__init__(self, *args, **kwargs)
 
         # MATLAB color scheme
@@ -30,20 +30,18 @@ class PlotWidget(pg.PlotWidget):
 
 
 def test_live():
-    import sys
     import numpy as np
-    from pyqtgraph_ext import XYDataItem
-    app = QApplication(sys.argv)
-    plot = PlotWidget()
+    from pyqtgraph_ext import XYData
+    app = QApplication()
+    plot = Figure()
     for i in range(3):
-        line = XYDataItem(y=np.random.randn(10), lineWidth=2)
+        line = XYData(y=np.random.randn(10), lineWidth=2)
         plot.addItem(line)
-    line = XYDataItem(y=np.random.randn(10))
+    line = XYData(y=np.random.randn(10))
     plot.addItem(line)
     plot.setWindowTitle('pyqtgraph-tools')
     plot.show()
-    status = app.exec()
-    sys.exit(status)
+    app.exec()
 
 
 if __name__ == '__main__':

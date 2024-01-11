@@ -8,7 +8,7 @@ from qtpy.QtWidgets import *
 import pyqtgraph as pg
 
 
-class AxisRegionItem(pg.LinearRegionItem):
+class AxisRegion(pg.LinearRegionItem):
     """ LinearRegionItem with context menu.
     
     self.sigRegionChangeFinished is emitted when the item is moved or resized.
@@ -22,8 +22,19 @@ class AxisRegionItem(pg.LinearRegionItem):
         if 'pen' not in kwargs:
             kwargs['pen'] = pg.mkPen(QColor(237, 135, 131), width=1)
         if 'swapMode' not in kwargs:
-            kwargs['swapMode'] = 'push'
+            kwargs['swapMode'] = 'push'  # keeps label on left side
         pg.LinearRegionItem.__init__(self, *args, **kwargs)
+
+        self.lines[0].sigClicked.connect(self.lineClicked)
+        self.lines[1].sigClicked.connect(self.lineClicked)
+
+        self.label: pg.InfLineLabel | None = None
+
+        self._group = None
+
+        # update label position when region is moved or resized
+        # TODO: disallow dragging label outside of viewbox
+        self.sigRegionChanged.connect(self.updateLabelPosition)
 
         self.setZValue(11)
     
@@ -32,6 +43,50 @@ class AxisRegionItem(pg.LinearRegionItem):
     
     def setIsMovable(self, movable: bool):
         self.setMovable(movable)
+    
+    def text(self):
+        try:
+            return self.label.format
+        except:
+            return ''
+
+    def setText(self, text):
+        if text is None or text == '':
+            if self.label is not None:
+                self.label.setParentItem(None)
+                self.label.deleteLater()
+            self.label = None
+            return
+        if self.label is None:
+            self.label = pg.InfLineLabel(self.lines[0], text=text, movable=True, position=1, anchors=[(0,0), (0,0)])
+            try:
+                self.setFontSize(self._label_font_size)
+            except:
+                pass
+        self.label.setFormat(text)
+    
+    def setFontSize(self, size):
+        if self.label is not None:
+            font = self.label.textItem.font()
+            font.setPointSize(size)
+            self.label.textItem.setFont(font)
+        else:
+            self._label_font_size = size
+    
+    def group(self) -> str | None:
+        return self._group
+    
+    def setGroup(self, group: str | None):
+        self._group = group
+    
+    def updateLabelPosition(self):
+        if self.label is not None:
+            self.label.updatePosition()
+    
+    def lineClicked(self, line, event):
+        if event.button() == Qt.RightButton:
+            if self.raiseContextMenu(event):
+                event.accept()
     
     def mouseClickEvent(self, event):
         if event.button() == Qt.RightButton:
@@ -76,6 +131,16 @@ class AxisRegionItem(pg.LinearRegionItem):
         moveableCheckBox.setChecked(self.isMovable())
         form.addRow('Moveable', moveableCheckBox)
 
+        group = self.group()
+        groupEdit = QLineEdit(group if group is not None else '')
+        form.addRow('Group', groupEdit)
+
+        text = self.text()
+        textEdit = QTextEdit()
+        if text is not None and text != '':
+            textEdit.setPlainText(text)
+        form.addRow('Text', textEdit)
+
         btns = QDialogButtonBox()
         btns.setStandardButtons(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
         btns.accepted.connect(dlg.accept)
@@ -92,18 +157,24 @@ class AxisRegionItem(pg.LinearRegionItem):
         
         self.setIsMovable(moveableCheckBox.isChecked())
 
+        group = groupEdit.text().strip()
+        self.setGroup(group if group != '' else None)
 
-class XAxisRegionItem(AxisRegionItem):
+        text = textEdit.toPlainText()
+        self.setText(text)
+
+
+class XAxisRegion(AxisRegion):
     """ Vertical AxisRegionItem for x-axis ROI. """
 
     def __init__(self, *args, **kwargs):
         kwargs['orientation'] = 'vertical'
-        AxisRegionItem.__init__(self, *args, **kwargs)
+        AxisRegion.__init__(self, *args, **kwargs)
 
 
-class YAxisRegionItem(AxisRegionItem):
+class YAxisRegion(AxisRegion):
     """ Horizontal AxisRegionItem for y-axis ROI. """
 
     def __init__(self, *args, **kwargs):
         kwargs['orientation'] = 'horizontal'
-        AxisRegionItem.__init__(self, *args, **kwargs)
+        AxisRegion.__init__(self, *args, **kwargs)

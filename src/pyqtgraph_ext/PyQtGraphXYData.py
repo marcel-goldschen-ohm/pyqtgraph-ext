@@ -9,7 +9,7 @@ import pyqtgraph as pg
 from pyqt_ext import XYDataStyleDict, editXYDataStyle
 
 
-class XYDataItem(pg.PlotDataItem):
+class XYData(pg.PlotDataItem):
     """ PlotDataItem with custom context menu and style dialog. """
 
     def __init__(self, *args, **kwargs):

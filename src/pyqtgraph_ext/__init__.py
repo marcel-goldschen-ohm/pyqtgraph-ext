@@ -1,7 +1,6 @@
-from pyqtgraph_ext.PyQtGraphAxisRegionItem import AxisRegionItem, XAxisRegionItem, YAxisRegionItem
-from pyqtgraph_ext.PyQtGraphEventItem import EventItem, EventLabel
-from pyqtgraph_ext.PyQtGraphXYDataItem import XYDataItem
-from pyqtgraph_ext.PyQtGraphViewBox import ViewBox  # import after items
-from pyqtgraph_ext.PyQtGraphPlotItem import PlotItem  # import after ViewBox
-from pyqtgraph_ext.PyQtGraphPlotWidget import PlotWidget  # import after PlotItem
-from pyqtgraph_ext.PyQtGraphPlotGrid import PlotGrid  # import after PlotItem
+from pyqtgraph_ext.PyQtGraphAxisRegion import AxisRegion, XAxisRegion, YAxisRegion
+from pyqtgraph_ext.PyQtGraphXYData import XYData
+from pyqtgraph_ext.PyQtGraphView import View  # import after items
+from pyqtgraph_ext.PyQtGraphPlot import Plot  # import after View
+from pyqtgraph_ext.PyQtGraphFigure import Figure  # import after Plot
+from pyqtgraph_ext.PyQtGraphPlotGrid import PlotGrid  # import after Plot
