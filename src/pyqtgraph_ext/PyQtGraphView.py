@@ -6,7 +6,7 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 import pyqtgraph as pg
-from pyqtgraph_ext import AxisRegion, XAxisRegion, YAxisRegion, EventItem, XYData
+from pyqtgraph_ext import AxisRegion, XAxisRegion, YAxisRegion, XYData
 
 
 class View(pg.ViewBox):
@@ -18,8 +18,6 @@ class View(pg.ViewBox):
 
     def __init__(self, *args, **kwargs):
         pg.ViewBox.__init__(self, *args, **kwargs)
-
-        # self.initContextMenu()
 
         self._lastMousePressPosInAxesCoords = {}  # dict keys are mouse buttons
         self._drawingItemsOfType = None
@@ -48,49 +46,48 @@ class View(pg.ViewBox):
         self._colorIndex = self._colorIndex % len(self._colormap)
     
     def nextColor(self):
-        color = self._colormap[self._colorIndex]
-        self._colorIndex = (self._colorIndex + 1) % len(self._colormap)
+        ncolors = len(self._colormap)
+        color = self._colormap[self._colorIndex % ncolors]
+        self._colorIndex = (self._colorIndex + 1) % ncolors
         return QColor(*color)
+    
+    def colorIndex(self):
+        return self._colorIndex
+    
+    def setColorIndex(self, colorIndex):
+        self._colorIndex = colorIndex
     
     def addItem(self, item):
         if isinstance(item, XYData):
             item.setColor(self.nextColor())
         pg.ViewBox.addItem(self, item)
     
-    def initContextMenu(self):
-        self._ROIsMenu = QMenu("ROIs")
-        self._ROIsMenu.addAction('Draw X-Axis ROIs (right-click to stop)', lambda: self.startDrawingItemsOfType(XAxisRegion))
-        # self._ROIsMenu.addAction('Draw Y-Axis ROIs (right-click to stop)', lambda: self.startDrawingItemsOfType(YAxisRegionItem))
-        self._ROIsMenu.addSeparator()
-        self._ROIsMenu.addAction("Show All", lambda: self.setVisibilityForItemsOfType(AxisRegion, True))
-        self._ROIsMenu.addAction("Hide All", lambda: self.setVisibilityForItemsOfType(AxisRegion, False))
-        self._ROIsMenu.addSeparator()
-        self._ROIsMenu.addAction("Delete All", lambda: self.deleteItemsOfType(AxisRegion))
+    # def initContextMenu(self):
+    #     self._ROIsMenu = QMenu("ROIs")
+    #     self._ROIsMenu.addAction('Draw X-Axis ROIs (right-click to stop)', lambda: self.startDrawingItemsOfType(XAxisRegion))
+    #     # self._ROIsMenu.addAction('Draw Y-Axis ROIs (right-click to stop)', lambda: self.startDrawingItemsOfType(YAxisRegionItem))
+    #     self._ROIsMenu.addSeparator()
+    #     self._ROIsMenu.addAction("Show All", lambda: self.setVisibilityForItemsOfType(AxisRegion, True))
+    #     self._ROIsMenu.addAction("Hide All", lambda: self.setVisibilityForItemsOfType(AxisRegion, False))
+    #     self._ROIsMenu.addSeparator()
+    #     self._ROIsMenu.addAction("Delete All", lambda: self.deleteItemsOfType(AxisRegion))
 
-        self._eventsMenu = QMenu("Events")
-        self._eventsMenu.addAction('Add Events  (right-click to stop)', lambda: self.startDrawingItemsOfType(EventItem))
-        self._eventsMenu.addSeparator()
-        self._eventsMenu.addAction("Show All", lambda: self.setVisibilityForItemsOfType(EventItem, True))
-        self._eventsMenu.addAction("Hide All", lambda: self.setVisibilityForItemsOfType(EventItem, False))
-        self._eventsMenu.addSeparator()
-        self._eventsMenu.addAction("Delete All", lambda: self.deleteItemsOfType(EventItem))
-
-        # append to default context menu
-        self.menu.addSection('ROIs')
-        self.menu.addMenu(self._ROIsMenu)
+    #     # append to default context menu
+    #     self.menu.addSection('ROIs')
+    #     self.menu.addMenu(self._ROIsMenu)
         
-        self.menu.addSection('Events')
-        self.menu.addMenu(self._eventsMenu)
+    #     self.menu.addSection('Events')
+    #     self.menu.addMenu(self._eventsMenu)
 
-        # for appended menus from other objects
-        self.menu.addSeparator()
+    #     # for appended menus from other objects
+    #     self.menu.addSeparator()
     
     def mousePressEvent(self, event):
         # store mouse press position in axes coords
         self._lastMousePressPosInAxesCoords[event.button()] = self.mapSceneToView(self.mapToScene(event.pos()))
 
         if event.button() == Qt.LeftButton:
-            # drawing region/event?
+            # drawing region?
             if self._drawingItemsOfType in [XAxisRegion, YAxisRegion]:
                 startPosInAxesCoords = self._lastMousePressPosInAxesCoords[Qt.LeftButton]
                 posInAxesCoords = self.mapSceneToView(self.mapToScene(event.pos()))
@@ -100,12 +97,6 @@ class View(pg.ViewBox):
                 elif self._drawingItemsOfType == YAxisRegion:
                     limits = sorted([startPosInAxesCoords.y(), posInAxesCoords.y()])
                     self._itemBeingDrawn = YAxisRegion(values=limits)
-                self.addItem(self._itemBeingDrawn)
-                event.accept()
-                return
-            elif self._drawingItemsOfType == EventItem:
-                x = self._lastMousePressPosInAxesCoords[Qt.LeftButton].x()
-                self._itemBeingDrawn = EventItem(values=(x, x))
                 self.addItem(self._itemBeingDrawn)
                 event.accept()
                 return
@@ -125,7 +116,7 @@ class View(pg.ViewBox):
     
     def mouseMoveEvent(self, event):
         if event.buttons() & Qt.LeftButton:
-            # drawing region/event?
+            # drawing region?
             if self._drawingItemsOfType in [XAxisRegion, YAxisRegion]:
                 startPosInAxesCoords = self._lastMousePressPosInAxesCoords[Qt.LeftButton]
                 posInAxesCoords = self.mapSceneToView(self.mapToScene(event.pos()))
@@ -133,13 +124,6 @@ class View(pg.ViewBox):
                     limits = sorted([startPosInAxesCoords.x(), posInAxesCoords.x()])
                 elif self._drawingItemsOfType == YAxisRegion:
                     limits = sorted([startPosInAxesCoords.y(), posInAxesCoords.y()])
-                self._itemBeingDrawn.setRegion(limits)
-                event.accept()
-                return
-            elif self._drawingItemsOfType == EventItem:
-                startPosInAxesCoords = self._lastMousePressPosInAxesCoords[Qt.LeftButton]
-                posInAxesCoords = self.mapSceneToView(self.mapToScene(event.pos()))
-                limits = tuple(sorted([startPosInAxesCoords.x(), posInAxesCoords.x()]))
                 self._itemBeingDrawn.setRegion(limits)
                 event.accept()
                 return
