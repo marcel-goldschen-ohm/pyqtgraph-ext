@@ -6,6 +6,7 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 import pyqtgraph as pg
+from pyqt_ext import ColorButton
 
 
 class AxisRegion(pg.LinearRegionItem):
@@ -79,6 +80,22 @@ class AxisRegion(pg.LinearRegionItem):
     def setGroup(self, group: str | None):
         self._group = group
     
+    def color(self) -> QColor:
+        return self.brush.color()
+    
+    def setColor(self, color: QColor):
+        self.brush.setColor(color)
+        self.hoverBrush.setColor(color)
+    
+    def lineColor(self) -> QColor:
+        return self.lines[0].pen.color()
+    
+    def setLineColor(self, color: QColor):
+        self.lines[0].pen.setColor(color)
+        self.lines[1].pen.setColor(color)
+        self.lines[0].hoverPen.setColor(color)
+        self.lines[1].hoverPen.setColor(color)
+    
     def updateLabelPosition(self):
         if self.label is not None:
             self.label.updatePosition()
@@ -118,8 +135,10 @@ class AxisRegion(pg.LinearRegionItem):
     
     def editDialog(self):
         dlg = QDialog(self.getViewWidget())
-        dlg.setWindowTitle('Axis Region')
+        dlg.setWindowTitle(self.__class__.__name__)
         form = QFormLayout(dlg)
+        form.setContentsMargins(5, 5, 5, 5)
+        form.setSpacing(5)
 
         limits = sorted(self.getRegion())
         minEdit = QLineEdit(f'{limits[0]:.6f}')
@@ -130,6 +149,12 @@ class AxisRegion(pg.LinearRegionItem):
         moveableCheckBox = QCheckBox()
         moveableCheckBox.setChecked(self.isMovable())
         form.addRow('Moveable', moveableCheckBox)
+
+        colorButton = ColorButton(self.color())
+        form.addRow('Color', colorButton)
+
+        lineColorButton = ColorButton(self.lineColor())
+        form.addRow('Line Color', lineColorButton)
 
         group = self.group()
         groupEdit = QLineEdit(group if group is not None else '')
@@ -156,6 +181,9 @@ class AxisRegion(pg.LinearRegionItem):
         self.setRegion(limits)
         
         self.setIsMovable(moveableCheckBox.isChecked())
+
+        self.setColor(colorButton.color())
+        self.setLineColor(lineColorButton.color())
 
         group = groupEdit.text().strip()
         self.setGroup(group if group != '' else None)
