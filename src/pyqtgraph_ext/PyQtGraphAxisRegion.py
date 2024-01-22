@@ -29,9 +29,9 @@ class AxisRegion(pg.LinearRegionItem):
         self.lines[0].sigClicked.connect(self.lineClicked)
         self.lines[1].sigClicked.connect(self.lineClicked)
 
-        self.label: pg.InfLineLabel | None = None
+        self._textLabelItem: pg.InfLineLabel | None = None
 
-        self._group = None
+        self._label = None
 
         # update label position when region is moved or resized
         # TODO: disallow dragging label outside of viewbox
@@ -47,38 +47,38 @@ class AxisRegion(pg.LinearRegionItem):
     
     def text(self):
         try:
-            return self.label.format
+            return self._textLabelItem.format
         except:
             return ''
 
     def setText(self, text):
         if text is None or text == '':
-            if self.label is not None:
-                self.label.setParentItem(None)
-                self.label.deleteLater()
-            self.label = None
+            if self._textLabelItem is not None:
+                self._textLabelItem.setParentItem(None)
+                self._textLabelItem.deleteLater()
+            self._textLabelItem = None
             return
-        if self.label is None:
-            self.label = pg.InfLineLabel(self.lines[0], text=text, movable=True, position=1, anchors=[(0,0), (0,0)])
+        if self._textLabelItem is None:
+            self._textLabelItem = pg.InfLineLabel(self.lines[0], text=text, movable=True, position=1, anchors=[(0,0), (0,0)])
             try:
                 self.setFontSize(self._label_font_size)
             except:
                 pass
-        self.label.setFormat(text)
+        self._textLabelItem.setFormat(text)
     
     def setFontSize(self, size):
-        if self.label is not None:
-            font = self.label.textItem.font()
+        if self._textLabelItem is not None:
+            font = self._textLabelItem.textItem.font()
             font.setPointSize(size)
-            self.label.textItem.setFont(font)
+            self._textLabelItem.textItem.setFont(font)
         else:
             self._label_font_size = size
     
-    def group(self) -> str | None:
-        return self._group
+    def label(self) -> str | None:
+        return self._label
     
-    def setGroup(self, group: str | None):
-        self._group = group
+    def setLabel(self, label: str | None):
+        self._label = label
     
     def color(self) -> QColor:
         return self.brush.color()
@@ -97,8 +97,8 @@ class AxisRegion(pg.LinearRegionItem):
         self.lines[1].hoverPen.setColor(color)
     
     def updateLabelPosition(self):
-        if self.label is not None:
-            self.label.updatePosition()
+        if self._textLabelItem is not None:
+            self._textLabelItem.updatePosition()
     
     def lineClicked(self, line, event):
         if event.button() == Qt.RightButton:
@@ -156,9 +156,9 @@ class AxisRegion(pg.LinearRegionItem):
         lineColorButton = ColorButton(self.lineColor())
         form.addRow('Line Color', lineColorButton)
 
-        group = self.group()
-        groupEdit = QLineEdit(group if group is not None else '')
-        form.addRow('Group', groupEdit)
+        label = self.label()
+        labelEdit = QLineEdit(label if label is not None else '')
+        form.addRow('Label', labelEdit)
 
         text = self.text()
         textEdit = QTextEdit()
@@ -177,19 +177,20 @@ class AxisRegion(pg.LinearRegionItem):
         if dlg.exec() != QDialog.Accepted:
             return
         
-        limits = sorted([float(minEdit.text()), float(maxEdit.text())])
-        self.setRegion(limits)
-        
         self.setIsMovable(moveableCheckBox.isChecked())
 
         self.setColor(colorButton.color())
         self.setLineColor(lineColorButton.color())
 
-        group = groupEdit.text().strip()
-        self.setGroup(group if group != '' else None)
+        label = labelEdit.text().strip()
+        self.setLabel(label if label != '' else None)
 
         text = textEdit.toPlainText()
         self.setText(text)
+        
+        # do this last so that the sigRegionChanged signal can be used for this dialog
+        limits = sorted([float(minEdit.text()), float(maxEdit.text())])
+        self.setRegion(limits)
 
 
 class XAxisRegion(AxisRegion):
