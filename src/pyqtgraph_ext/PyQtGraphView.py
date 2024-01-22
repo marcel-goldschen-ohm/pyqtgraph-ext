@@ -57,10 +57,10 @@ class View(pg.ViewBox):
     def setColorIndex(self, colorIndex):
         self._colorIndex = colorIndex
     
-    def addItem(self, item):
-        if isinstance(item, XYData):
-            item.setColor(self.nextColor())
-        pg.ViewBox.addItem(self, item)
+    # def addItem(self, item):
+    #     if isinstance(item, XYData):
+    #         item.setColor(self.nextColor())
+    #     pg.ViewBox.addItem(self, item)
     
     # def initContextMenu(self):
     #     self._ROIsMenu = QMenu("ROIs")
