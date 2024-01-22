@@ -12,6 +12,8 @@ from pyqt_ext import XYDataStyleDict, editXYDataStyle
 class XYData(pg.PlotDataItem):
     """ PlotDataItem with custom context menu and style dialog. """
 
+    sigNameChanged = Signal(str)
+
     def __init__(self, *args, **kwargs):
         # default style is first MATLAB line color
         if 'pen' not in kwargs:
@@ -90,6 +92,7 @@ class XYData(pg.PlotDataItem):
             del self.opts['Name']
         else:
             self.opts['Name'] = name
+        self.sigNameChanged.emit(self.name())
     
     def styleDict(self) -> XYDataStyleDict:
         style = XYDataStyleDict()
