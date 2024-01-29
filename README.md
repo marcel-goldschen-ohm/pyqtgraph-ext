@@ -1,12 +1,14 @@
-# PyQtGraph-ext
+# pyqtgraph-ext
 Collection of [PyQtGraph](https://www.pyqtgraph.org) widgets/tools.
 
-- [PyQtGraphAxisRegionItem](https://github.com/marcel-goldschen-ohm/PyQtGraph-ext/docs/PyQtGraphAxisRegionItem.md)
-- [PyQtGraphEventItem](https://github.com/marcel-goldschen-ohm/PyQtGraph-ext/docs/PyQtGraphEventItem.md)
-- [PyQtGraphPlotItem](https://github.com/marcel-goldschen-ohm/PyQtGraph-ext/docs/PyQtGraphPlotItem.md)
-- [PyQtGraphPlotWidget](https://github.com/marcel-goldschen-ohm/PyQtGraph-ext/docs/PyQtGraphPlotWidget.md)
-- [PyQtGraphViewBox](https://github.com/marcel-goldschen-ohm/PyQtGraph-ext/docs/PyQtGraphViewBox.md)
-- [PyQtGraphXYDataItem](https://github.com/marcel-goldschen-ohm/PyQtGraph-ext/docs/PyQtGraphXYDataItem.md)
+:construction:
+
+- [AxisRegionItem](https://github.com/marcel-goldschen-ohm/PyQtGraph-ext/docs/AxisRegionItem.md)
+- [View](https://github.com/marcel-goldschen-ohm/PyQtGraph-ext/docs/View.md)
+- [Plot](https://github.com/marcel-goldschen-ohm/PyQtGraph-ext/docs/Plot.md)
+- [Figure](https://github.com/marcel-goldschen-ohm/PyQtGraph-ext/docs/Figure.md)
+- [Plot Grid](https://github.com/marcel-goldschen-ohm/PyQtGraph-ext/docs/PlotGrid.md)
+- [XY Data](https://github.com/marcel-goldschen-ohm/PyQtGraph-ext/docs/XYData.md)
 
 # Install
 Should work with PySide6, PyQt6, or PyQt5.
