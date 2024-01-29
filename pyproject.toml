@@ -30,8 +30,8 @@ classifiers = [
 
 
 [project.urls]
-homepage = "https://github.com/marcel-goldschen-ohm/PyQtGraph-ext"
-repository = "https://github.com/marcel-goldschen-ohm/PyQtGraph-ext"
+homepage = "https://github.com/marcel-goldschen-ohm/pyqtgraph-ext"
+repository = "https://github.com/marcel-goldschen-ohm/pyqtgraph-ext"
 
 
 [build-system]
