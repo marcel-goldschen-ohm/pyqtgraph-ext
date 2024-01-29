@@ -6,7 +6,7 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 import pyqtgraph as pg
-from pyqt_ext import XYDataStyleDict, editXYDataStyle
+from pyqt_ext import toQColor, ChartDataStyle, editChartDataStyle
 
 
 class XYData(pg.PlotDataItem):
@@ -94,8 +94,8 @@ class XYData(pg.PlotDataItem):
             self.opts['Name'] = name
         self.sigNameChanged.emit(self.name())
     
-    def styleDict(self) -> XYDataStyleDict:
-        style = XYDataStyleDict()
+    def dataStyle(self) -> ChartDataStyle:
+        style = ChartDataStyle()
 
         pen = pg.mkPen(self.opts['pen'])
         symbolPen = pg.mkPen(self.opts['symbolPen'])
@@ -118,23 +118,23 @@ class XYData(pg.PlotDataItem):
 
         return style
     
-    def setStyleDict(self, style: XYDataStyleDict, colorIndex=None):
+    def setDataStyle(self, style: ChartDataStyle, colorIndex=None):
         # color
-        color: str = style.color()
-        if color == 'auto':
+        if style.color() == 'auto':
             if colorIndex is not None:
                 try:
                     axes = self.getViewBox()
-                    colormap = axes._colormap
+                    colormap = axes.colormap()
                     color = colormap[colorIndex % len(colormap)]
                     colorIndex += 1
                 except:
-                    old_style = self.styleDict()
-                    color = old_style.color()
+                    old_style = self.dataStyle()
+                    color = old_style.qcolor()
             else:
-                old_style = self.styleDict()
-                color = old_style.color()
-        color: QColor = XYDataStyleDict.toQColor(color)
+                old_style = self.dataStyle()
+                color = old_style.qcolor()
+        else:
+            color = style.qcolor()
 
         # line
         lineStyle: Qt.PenStyle = style.lineQtPenStyle()
@@ -174,11 +174,11 @@ class XYData(pg.PlotDataItem):
         name = self.name()
         if name is None:
             name = self.__class__.__name__
-        style: XYDataStyleDict | None = editXYDataStyle(self.styleDict(), parent = self.getViewBox().getViewWidget(), title = name)
+        style: ChartDataStyle | None = editChartDataStyle(self.dataStyle(), parent = self.getViewBox().getViewWidget(), title = name)
         if style is not None:
-            self.setStyleDict(style)
+            self.setDataStyle(style)
 
     def setColor(self, color: QColor):
-        style: XYDataStyleDict = self.styleDict()
+        style: ChartDataStyle = self.dataStyle()
         style.setColor(color)
-        self.setStyleDict(style)
+        self.setDataStyle(style)
