@@ -6,10 +6,10 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 import pyqtgraph as pg
-from pyqt_ext import toQColor, ChartDataStyle, editChartDataStyle
+from pyqt_ext import toQColor, GraphStyle, editGraphStyle
 
 
-class XYData(pg.PlotDataItem):
+class Graph(pg.PlotDataItem):
     """ PlotDataItem with custom context menu and style dialog. """
 
     sigNameChanged = Signal(str)

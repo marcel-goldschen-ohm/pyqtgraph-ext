@@ -37,6 +37,27 @@ class PlotGrid(pg.GraphicsLayoutWidget):
             
     def columnCount(self) -> int:
         return self._grid_layout.columnCount()
+    
+    def applyRegularLayout(self) -> None:
+        viewWidth = 0
+        for col in range(self.columnCount()):
+            viewWidth += self.getItem(0, col).getViewBox().width()
+        viewWidth /= self.columnCount()
+        viewWidth = int(viewWidth)
+
+        viewHeight = 0
+        for row in range(self.rowCount()):
+            viewHeight += self.getItem(row, 0).getViewBox().height()
+        viewHeight /= self.rowCount()
+        viewHeight = int(viewHeight)
+
+        for row in range(self.rowCount()):
+            for col in range(self.columnCount()):
+                plot = self.getItem(row, col)
+                xaxis = plot.getAxis('bottom')
+                yaxis = plot.getAxis('left')
+                plot.setPreferredWidth(viewWidth + yaxis.width() if yaxis.isVisible() else viewWidth)
+                plot.setPreferredHeight(viewHeight + xaxis.height() if xaxis.isVisible() else viewHeight)
 
 def test_live():
     from pyqtgraph_ext import Plot
@@ -56,6 +77,7 @@ def test_live():
                 plot.getAxis('bottom').label.hide()
                 plot.getAxis('bottom').setStyle(showValues=False)
             grid.addItem(plot, row, col)
+    grid.applyRegularLayout()
     grid.setWindowTitle('pyqtgraph-tools.PlotGrid')
     grid.show()
     app.exec()

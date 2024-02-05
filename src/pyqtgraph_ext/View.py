@@ -6,7 +6,7 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 import pyqtgraph as pg
-from pyqtgraph_ext import AxisRegion, XAxisRegion, YAxisRegion, XYData
+from pyqtgraph_ext import AxisRegion, XAxisRegion, YAxisRegion, Graph
 
 
 class View(pg.ViewBox):
@@ -58,7 +58,7 @@ class View(pg.ViewBox):
         self._colorIndex = colorIndex
     
     # def addItem(self, item):
-    #     if isinstance(item, XYData):
+    #     if isinstance(item, Graph):
     #         item.setColor(self.nextColor())
     #     pg.ViewBox.addItem(self, item)
     
@@ -157,11 +157,11 @@ class View(pg.ViewBox):
 
 def test_live():
     import numpy as np
-    from pyqtgraph_ext import Figure, XYData
+    from pyqtgraph_ext import Figure, Graph
     app = QApplication()
     axes = View()
     plot = Figure(viewBox=axes)
-    line = XYData(y=np.random.randn(1000))
+    line = Graph(y=np.random.randn(1000))
     plot.addItem(line)
     plot.setWindowTitle('pyqtgraph-tools')
     plot.show()

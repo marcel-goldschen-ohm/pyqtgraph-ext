@@ -31,14 +31,13 @@ class Figure(pg.PlotWidget):
 
 def test_live():
     import numpy as np
-    from pyqtgraph_ext import XYData
+    from pyqtgraph_ext import Graph
     app = QApplication()
     plot = Figure()
+    view = plot.getViewBox()
     for i in range(3):
-        line = XYData(y=np.random.randn(10), lineWidth=2)
+        line = Graph(y=np.random.randn(10), pen=pg.mkPen(color=view.nextColor(), width=3))
         plot.addItem(line)
-    line = XYData(y=np.random.randn(10))
-    plot.addItem(line)
     plot.setWindowTitle('pyqtgraph-tools')
     plot.show()
     app.exec()
