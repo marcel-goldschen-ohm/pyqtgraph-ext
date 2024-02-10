@@ -40,24 +40,33 @@ class PlotGrid(pg.GraphicsLayoutWidget):
     
     def applyRegularLayout(self) -> None:
         viewWidth = 0
+        n = 0
         for col in range(self.columnCount()):
-            viewWidth += self.getItem(0, col).getViewBox().width()
-        viewWidth /= self.columnCount()
+            item = self.getItem(0, col)
+            if issubclass(type(item), pg.PlotItem):
+                viewWidth += item.getViewBox().width()
+                n += 1
+        viewWidth /= n
         viewWidth = int(viewWidth)
 
         viewHeight = 0
+        n = 0
         for row in range(self.rowCount()):
-            viewHeight += self.getItem(row, 0).getViewBox().height()
-        viewHeight /= self.rowCount()
+            item = self.getItem(row, 0)
+            if issubclass(type(item), pg.PlotItem):
+                viewHeight += item.getViewBox().height()
+                n += 1
+        viewHeight /= n
         viewHeight = int(viewHeight)
 
         for row in range(self.rowCount()):
             for col in range(self.columnCount()):
                 plot = self.getItem(row, col)
-                xaxis = plot.getAxis('bottom')
-                yaxis = plot.getAxis('left')
-                plot.setPreferredWidth(viewWidth + yaxis.width() if yaxis.isVisible() else viewWidth)
-                plot.setPreferredHeight(viewHeight + xaxis.height() if xaxis.isVisible() else viewHeight)
+                if issubclass(type(plot), pg.PlotItem):
+                    xaxis = plot.getAxis('bottom')
+                    yaxis = plot.getAxis('left')
+                    plot.setPreferredWidth(viewWidth + yaxis.width() if yaxis.isVisible() else viewWidth)
+                    plot.setPreferredHeight(viewHeight + xaxis.height() if xaxis.isVisible() else viewHeight)
 
 def test_live():
     from pyqtgraph_ext import Plot

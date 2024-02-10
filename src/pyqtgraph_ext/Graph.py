@@ -94,8 +94,8 @@ class Graph(pg.PlotDataItem):
             self.opts['Name'] = name
         self.sigNameChanged.emit(self.name())
     
-    def dataStyle(self) -> ChartDataStyle:
-        style = ChartDataStyle()
+    def graphStyle(self) -> GraphStyle:
+        style = GraphStyle()
 
         pen = pg.mkPen(self.opts['pen'])
         symbolPen = pg.mkPen(self.opts['symbolPen'])
@@ -118,7 +118,7 @@ class Graph(pg.PlotDataItem):
 
         return style
     
-    def setDataStyle(self, style: ChartDataStyle, colorIndex=None):
+    def setGraphStyle(self, style: GraphStyle, colorIndex=None):
         # color
         if style.color() == 'auto':
             if colorIndex is not None:
@@ -126,13 +126,12 @@ class Graph(pg.PlotDataItem):
                     axes = self.getViewBox()
                     colormap = axes.colormap()
                     color = colormap[colorIndex % len(colormap)]
+                    color = toQColor(color)
                     colorIndex += 1
                 except:
-                    old_style = self.dataStyle()
-                    color = old_style.qcolor()
+                    color = self.graphStyle().qcolor()
             else:
-                old_style = self.dataStyle()
-                color = old_style.qcolor()
+                color = self.graphStyle().qcolor()
         else:
             color = style.qcolor()
 
@@ -174,11 +173,11 @@ class Graph(pg.PlotDataItem):
         name = self.name()
         if name is None:
             name = self.__class__.__name__
-        style: ChartDataStyle | None = editChartDataStyle(self.dataStyle(), parent = self.getViewBox().getViewWidget(), title = name)
+        style: GraphStyle | None = editGraphStyle(self.graphStyle(), parent = self.getViewBox().getViewWidget(), title = name)
         if style is not None:
-            self.setDataStyle(style)
+            self.setGraphStyle(style)
 
     def setColor(self, color: QColor):
-        style: ChartDataStyle = self.dataStyle()
+        style: ChartDataStyle = self.graphStyle()
         style.setColor(color)
-        self.setDataStyle(style)
+        self.setGraphStyle(style)
