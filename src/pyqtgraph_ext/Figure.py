@@ -40,6 +40,9 @@ def test_live():
         plot.addItem(line)
     plot.setWindowTitle('pyqtgraph-tools')
     plot.show()
+    # from pyqtgraph_ext import XAxisRegion
+    # view.startDrawingItemsOfType(XAxisRegion)
+    # QTimer.singleShot(1000, lambda: view.stopDrawingItems())
     app.exec()
 
 

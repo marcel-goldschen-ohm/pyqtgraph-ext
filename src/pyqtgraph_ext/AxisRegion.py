@@ -31,7 +31,7 @@ class AxisRegion(pg.LinearRegionItem):
 
         self._textLabelItem: pg.InfLineLabel | None = None
 
-        self._label = None
+        # self._label = None
 
         # update label position when region is moved or resized
         # TODO: disallow dragging label outside of viewbox
@@ -64,6 +64,7 @@ class AxisRegion(pg.LinearRegionItem):
                 self.setFontSize(self._label_font_size)
             except:
                 pass
+            # self._textLabelItem.sigPositionChangeFinished.connect(self.updateLabelPosition)
         self._textLabelItem.setFormat(text)
     
     def setFontSize(self, size):
@@ -74,11 +75,11 @@ class AxisRegion(pg.LinearRegionItem):
         else:
             self._label_font_size = size
     
-    def label(self) -> str | None:
-        return self._label
+    # def label(self) -> str | None:
+    #     return self._label
     
-    def setLabel(self, label: str | None):
-        self._label = label
+    # def setLabel(self, label: str | None):
+    #     self._label = label
     
     def color(self) -> QColor:
         return self.brush.color()
@@ -99,6 +100,9 @@ class AxisRegion(pg.LinearRegionItem):
     def updateLabelPosition(self):
         if self._textLabelItem is not None:
             self._textLabelItem.updatePosition()
+            pos = self._textLabelItem.orthoPos
+            if pos < 0.05:
+                self._textLabelItem.setPosition(0.05)
     
     def lineClicked(self, line, event):
         if event.button() == Qt.RightButton:
@@ -146,9 +150,9 @@ class AxisRegion(pg.LinearRegionItem):
         form.addRow('Min', minEdit)
         form.addRow('Max', maxEdit)
 
-        moveableCheckBox = QCheckBox()
-        moveableCheckBox.setChecked(self.isMovable())
-        form.addRow('Moveable', moveableCheckBox)
+        movableCheckBox = QCheckBox()
+        movableCheckBox.setChecked(self.isMovable())
+        form.addRow('Movable', movableCheckBox)
 
         colorButton = ColorButton(self.color())
         form.addRow('Color', colorButton)
@@ -156,9 +160,9 @@ class AxisRegion(pg.LinearRegionItem):
         lineColorButton = ColorButton(self.lineColor())
         form.addRow('Line Color', lineColorButton)
 
-        label = self.label()
-        labelEdit = QLineEdit(label if label is not None else '')
-        form.addRow('Label', labelEdit)
+        # label = self.label()
+        # labelEdit = QLineEdit(label if label is not None else '')
+        # form.addRow('Label', labelEdit)
 
         text = self.text()
         textEdit = QTextEdit()
@@ -177,18 +181,18 @@ class AxisRegion(pg.LinearRegionItem):
         if dlg.exec() != QDialog.Accepted:
             return
         
-        self.setIsMovable(moveableCheckBox.isChecked())
+        self.setIsMovable(movableCheckBox.isChecked())
 
         self.setColor(colorButton.color())
         self.setLineColor(lineColorButton.color())
 
-        label = labelEdit.text().strip()
-        self.setLabel(label if label != '' else None)
+        # label = labelEdit.text().strip()
+        # self.setLabel(label if label != '' else None)
 
         text = textEdit.toPlainText()
         self.setText(text)
         
-        # do this last so that the sigRegionChanged signal can be used for this dialog
+        # do this last so that the sigRegionChanged signal can be used for all things in this dialog
         limits = sorted([float(minEdit.text()), float(maxEdit.text())])
         self.setRegion(limits)
 
