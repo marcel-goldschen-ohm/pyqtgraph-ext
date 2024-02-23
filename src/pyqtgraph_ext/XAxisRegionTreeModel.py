@@ -6,13 +6,13 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 from pyqt_ext import AbstractTreeModel
-from pyqtgraph_ext import AxisRegionTreeItem
+from pyqtgraph_ext import XAxisRegionTreeItem
 import qtawesome as qta
 
 
-class AxisRegionTreeModel(AbstractTreeModel):
+class XAxisRegionTreeModel(AbstractTreeModel):
     
-    def __init__(self, root: AxisRegionTreeItem = None, parent: QObject = None):
+    def __init__(self, root: XAxisRegionTreeItem = None, parent: QObject = None):
         AbstractTreeModel.__init__(self, root, parent)
         self.setColumnLabels(['Axis Regions'])
     
@@ -25,7 +25,7 @@ class AxisRegionTreeModel(AbstractTreeModel):
                 # allow drops on the root item (i.e., this allows drops on the viewport away from other items)
                 return Qt.ItemFlag.ItemIsDropEnabled
             return Qt.ItemFlag.NoItemFlags
-        item: AxisRegionTreeItem = self.itemFromIndex(index)
+        item: XAxisRegionTreeItem = self.itemFromIndex(index)
         flags = Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
         if self.supportedDropActions() != Qt.DropAction.IgnoreAction:
             flags |= Qt.ItemFlag.ItemIsDragEnabled
@@ -36,7 +36,7 @@ class AxisRegionTreeModel(AbstractTreeModel):
     def data(self, index: QModelIndex, role: int):
         if not index.isValid():
             return
-        item: AxisRegionTreeItem = self.itemFromIndex(index)
+        item: XAxisRegionTreeItem = self.itemFromIndex(index)
         if item is None:
             return
         if role == Qt.ItemDataRole.DisplayRole or role == Qt.ItemDataRole.EditRole:
@@ -49,18 +49,21 @@ class AxisRegionTreeModel(AbstractTreeModel):
     def setData(self, index: QModelIndex, value, role: int) -> bool:
         if role != Qt.ItemDataRole.EditRole:
             return False
-        item: AxisRegionTreeItem = self.itemFromIndex(index)
+        item: XAxisRegionTreeItem = self.itemFromIndex(index)
         if item is None:
             return False
         if role == Qt.ItemDataRole.EditRole:
-            return item.set_data(index.column(), value)
+            success: bool = item.set_data(index.column(), value)
+            if success:
+                self.dataChanged.emit(index, index)
+            return success
         return False
 
 
-class AxisRegionDndTreeModel(AxisRegionTreeModel):
+class AxisRegionDndTreeModel(XAxisRegionTreeModel):
 
-    def __init__(self, root: AxisRegionTreeItem = None, parent: QObject = None):
-        AxisRegionTreeModel.__init__(self, root, parent)
+    def __init__(self, root: XAxisRegionTreeItem = None, parent: QObject = None):
+        XAxisRegionTreeModel.__init__(self, root, parent)
     
     def supportedDropActions(self) -> Qt.DropActions:
         return Qt.DropAction.MoveAction | Qt.DropAction.CopyAction

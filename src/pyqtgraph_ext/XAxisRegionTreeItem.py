@@ -1,7 +1,8 @@
 """ Data interface for a tree of axis regions.
 
 REGION = {
-    'region': {'x': [0, 1], 'y': [7, 9]},
+    'region': [0, 1],
+    'dim': 'x',
     'text': 'my label\n details...',
     ...
 }
@@ -30,9 +31,9 @@ from pyqt_ext import AbstractTreeItem
 from pyqtgraph_ext import AxisRegion
 
 
-class AxisRegionTreeItem(AbstractTreeItem):
+class XAxisRegionTreeItem(AbstractTreeItem):
     
-    def __init__(self, data: dict | list, parent: AxisRegionTreeItem | None = None) -> None:
+    def __init__(self, data: dict | list, parent: XAxisRegionTreeItem | None = None) -> None:
         self._region: dict = None
         self._group_dict: dict = None
         self._group_list: list = None
@@ -43,12 +44,14 @@ class AxisRegionTreeItem(AbstractTreeItem):
         elif isinstance(data, dict) and ('region' not in data) and len(data) == 1 and isinstance(list(data.values())[0], list):
             self._group_dict = data
             self._group_list = list(data.values())[0]
+        else:
+            raise ValueError('Invalid data type for XAxisRegionTreeItem.')
         AbstractTreeItem.__init__(self, parent=parent)
 
         # recursively build subtree
         if self._group_list is not None:
             for item in self._group_list:
-                AxisRegionTreeItem(item, parent=self)
+                XAxisRegionTreeItem(item, parent=self)
     
     def __repr__(self):
         if self.is_region():
@@ -56,12 +59,13 @@ class AxisRegionTreeItem(AbstractTreeItem):
             if label:
                 label = label.split('\n')[0].strip()
             if not label:
-                label = []
-                for dim, lim in self._region['region'].items():
-                    lb = f'{lim[0]:.6f}'.rstrip('0').rstrip('.')
-                    ub = f'{lim[1]:.6f}'.rstrip('0').rstrip('.')
-                    label.append(f'{dim}: {lb}-{ub}')
-                label = ', '.join(label)
+                lims = self._region['region']
+                lb = f'{lims[0]:.6f}'.rstrip('0').rstrip('.')
+                ub = f'{lims[1]:.6f}'.rstrip('0').rstrip('.')
+                label = f'{lb}-{ub}'
+                dim = self._region.get('dim', '')
+                if dim:
+                    label = f'{dim}: {label}'
             return label
         elif self.is_root_group():
             return '/'
@@ -69,18 +73,15 @@ class AxisRegionTreeItem(AbstractTreeItem):
             return str(list(self._group_dict.keys())[0])
     
     @AbstractTreeItem.parent.setter
-    def parent(self, parent: AxisRegionTreeItem | None) -> None:
+    def parent(self, parent: XAxisRegionTreeItem | None) -> None:
         if self.parent is parent:
-            return
-        if self.is_root_group():
-            # cannot alter root group in hierarchy
             return
         if parent is not None:
             if not parent.is_group():
                 raise ValueError('Parent must be a group.')
-            # if self.is_group() and not parent.is_root():
-            #     raise ValueError('Groups must be children of root.')
-        old_parent: AxisRegionTreeItem | None = self.parent
+            if self.is_group() and not parent.is_root():
+                raise ValueError('Groups must be children of root.')
+        old_parent: XAxisRegionTreeItem | None = self.parent
         AbstractTreeItem.parent.fset(self, parent)
         if self.is_region():
             if old_parent is not None:
@@ -108,9 +109,9 @@ class AxisRegionTreeItem(AbstractTreeItem):
         return self._group_list is not None
     
     def is_root_group(self):
-        return self.is_group() and self._group_dict is None
+        return self.is_group() and self.is_root()
     
-    def insert_child(self, index: int, item: AxisRegionTreeItem) -> bool:
+    def insert_child(self, index: int, item: XAxisRegionTreeItem) -> bool:
         if not self.is_group():
             return False
         item.parent = self
@@ -133,6 +134,8 @@ class AxisRegionTreeItem(AbstractTreeItem):
     
     def set_data(self, column: int, value) -> bool:
         value = value.strip()
+        if value == self.data(column):
+            return False
         if column == 0:
             if self.is_region():
                 text = self._region.get('text', '').split('\n')
@@ -159,37 +162,34 @@ def test_tree():
     data = [
         {
             'group A': [
-                # {'region': {'x': [0, 1]}}, 
-                {'region': {'t': [8, 9]}, 'text': 'my label\n details...'}
+                {'region': [8, 9], 'dim': 't', 'text': 'my label\n details...'}
             ],
         },
         {
             'group B': [
-                {'region': {'x': [3, 4]}}, 
-                # {'region': {'t': [18, 19]}}
+                {'region': [3, 4], 'dim': 'x'}, 
             ],
         },
-        {'region': {'x': [35, 45]}}, 
-        # {'region': {'t': [180, 190]}},
+        {'region': [35, 45], 'dim': 'x'}, 
     ]
     # print(json.dumps(data, indent=2))
 
-    root = AxisRegionTreeItem(data)
+    root = XAxisRegionTreeItem(data)
     print(root)
 
-    root.children[0].children[0].parent = root.children[1]
-    print('move 1st region in group A to group B')
-    print(root)
+    # root.children[0].children[0].parent = root.children[1]
+    # print('move 1st region in group A to group B')
+    # print(root)
 
-    root.insert_child(2, root.children[1].children[-1])
-    print('move last region in group B to 3rd child of root')
-    print(root)
+    # root.insert_child(2, root.children[1].children[-1])
+    # print('move last region in group B to 3rd child of root')
+    # print(root)
 
-    root.insert_child(1, AxisRegionTreeItem({'test': []}, parent=root))
-    print('add group "test" as 2nd child of root')
-    print(root)
+    # root.insert_child(1, XAxisRegionTreeItem({'test': []}, parent=root))
+    # print('add group "test" as 2nd child of root')
+    # print(root)
 
-    print(json.dumps(data, indent=2))
+    # print(json.dumps(data, indent=2))
 
     # for item in root.depth_first():
     #     # print(repr(item), repr(item.parent))

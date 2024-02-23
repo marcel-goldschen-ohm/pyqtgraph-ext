@@ -6,7 +6,7 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 import pyqtgraph as pg
-from pyqt_ext import ColorButton
+from pyqt_ext import ColorButton, toColorStr, toQColor
 
 
 class AxisRegion(pg.LinearRegionItem):
@@ -26,16 +26,16 @@ class AxisRegion(pg.LinearRegionItem):
             kwargs['swapMode'] = 'push'  # keeps label on left side
         pg.LinearRegionItem.__init__(self, *args, **kwargs)
 
+        self._textLabelItem: pg.InfLineLabel = pg.InfLineLabel(self.lines[0], text='', movable=True, position=1, anchors=[(0,0), (0,0)])
+        self._textLabelItem.setVisible(False)
+
         self.lines[0].sigClicked.connect(self.lineClicked)
         self.lines[1].sigClicked.connect(self.lineClicked)
-
-        self._textLabelItem: pg.InfLineLabel | None = None
-
-        # self._label = None
 
         # update label position when region is moved or resized
         # TODO: disallow dragging label outside of viewbox
         self.sigRegionChanged.connect(self.updateLabelPosition)
+        self.sigRegionChangeFinished.connect(self.updateData)
 
         self.setZValue(11)
     
@@ -51,35 +51,17 @@ class AxisRegion(pg.LinearRegionItem):
         except:
             return ''
 
-    def setText(self, text):
-        if text is None or text == '':
-            if self._textLabelItem is not None:
-                self._textLabelItem.setParentItem(None)
-                self._textLabelItem.deleteLater()
-            self._textLabelItem = None
-            return
-        if self._textLabelItem is None:
-            self._textLabelItem = pg.InfLineLabel(self.lines[0], text=text, movable=True, position=1, anchors=[(0,0), (0,0)])
-            try:
-                self.setFontSize(self._label_font_size)
-            except:
-                pass
-            # self._textLabelItem.sigPositionChangeFinished.connect(self.updateLabelPosition)
+    def setText(self, text: str):
         self._textLabelItem.setFormat(text)
+        self._textLabelItem.setVisible(text != '')
+    
+    def fontSize(self) -> int:
+        return self._textLabelItem.textItem.font().pointSize()
     
     def setFontSize(self, size):
-        if self._textLabelItem is not None:
-            font = self._textLabelItem.textItem.font()
-            font.setPointSize(size)
-            self._textLabelItem.textItem.setFont(font)
-        else:
-            self._label_font_size = size
-    
-    # def label(self) -> str | None:
-    #     return self._label
-    
-    # def setLabel(self, label: str | None):
-    #     self._label = label
+        font = self._textLabelItem.textItem.font()
+        font.setPointSize(size)
+        self._textLabelItem.textItem.setFont(font)
     
     def color(self) -> QColor:
         return self.brush.color()
@@ -97,6 +79,15 @@ class AxisRegion(pg.LinearRegionItem):
         self.lines[0].hoverPen.setColor(color)
         self.lines[1].hoverPen.setColor(color)
     
+    def lineWidth(self) -> float:
+        return self.lines[0].pen.width()
+    
+    def setLineWidth(self, width: float):
+        self.lines[0].pen.setWidth(width)
+        self.lines[1].pen.setWidth(width)
+        self.lines[0].hoverPen.setWidth(width)
+        self.lines[1].hoverPen.setWidth(width)
+    
     def updateLabelPosition(self):
         if self._textLabelItem is not None:
             self._textLabelItem.updatePosition()
@@ -109,11 +100,12 @@ class AxisRegion(pg.LinearRegionItem):
             if self.raiseContextMenu(event):
                 event.accept()
     
-    def mouseClickEvent(self, event):
-        if event.button() == Qt.RightButton:
-            if self.boundingRect().contains(event.pos()):
-                if self.raiseContextMenu(event):
-                    event.accept()
+    # !!! uncomment for right-click context menu
+    # def mouseClickEvent(self, event):
+    #     if event.button() == Qt.RightButton:
+    #         if self.boundingRect().contains(event.pos()):
+    #             if self.raiseContextMenu(event):
+    #                 event.accept()
     
     def raiseContextMenu(self, event):
         menu = self.getContextMenus(event)
@@ -122,14 +114,14 @@ class AxisRegion(pg.LinearRegionItem):
         return True
     
     def getContextMenus(self, event=None):
+        self.menu = QMenu()
+
         self._thisItemMenu = QMenu(self.__class__.__name__)
-        self._thisItemMenu.addAction('Edit', self.editDialog)
+        self._thisItemMenu.addAction('Edit', lambda: self.editDialog())
         self._thisItemMenu.addSeparator()
         self._thisItemMenu.addAction('Hide', lambda: self.setVisible(False))
         self._thisItemMenu.addSeparator()
         self._thisItemMenu.addAction('Delete', lambda: self.getViewBox().deleteItem(self))
-
-        self.menu = QMenu()
         self.menu.addMenu(self._thisItemMenu)
 
         # Let the scene add on to the end of our context menu (this is optional)
@@ -137,8 +129,10 @@ class AxisRegion(pg.LinearRegionItem):
         self.menu = self.scene().addParentContextMenus(self, self.menu, event)
         return self.menu
     
-    def editDialog(self):
-        dlg = QDialog(self.getViewWidget())
+    def editDialog(self, parent: QWidget = None):
+        if parent is None:
+            parent = self.getViewWidget()
+        dlg = QDialog(parent)
         dlg.setWindowTitle(self.__class__.__name__)
         form = QFormLayout(dlg)
         form.setContentsMargins(5, 5, 5, 5)
@@ -159,6 +153,10 @@ class AxisRegion(pg.LinearRegionItem):
 
         lineColorButton = ColorButton(self.lineColor())
         form.addRow('Line Color', lineColorButton)
+
+        lineWidthSpinBox = QDoubleSpinBox()
+        lineWidthSpinBox.setValue(self.lineWidth())
+        form.addRow('Line Width', lineWidthSpinBox)
 
         # label = self.label()
         # labelEdit = QLineEdit(label if label is not None else '')
@@ -185,6 +183,7 @@ class AxisRegion(pg.LinearRegionItem):
 
         self.setColor(colorButton.color())
         self.setLineColor(lineColorButton.color())
+        self.setLineWidth(lineWidthSpinBox.value())
 
         # label = labelEdit.text().strip()
         # self.setLabel(label if label != '' else None)
@@ -195,6 +194,34 @@ class AxisRegion(pg.LinearRegionItem):
         # do this last so that the sigRegionChanged signal can be used for all things in this dialog
         limits = sorted([float(minEdit.text()), float(maxEdit.text())])
         self.setRegion(limits)
+    
+    def toDict(self, data: dict = None):
+        if data is None:
+            if not hasattr(self, '_data'):
+                self._data = {}
+            data = self._data
+        data['region'] = list(self.getRegion())
+        data['text'] = self.text()
+        data['movable'] = self.isMovable()
+        data['color'] = toColorStr(self.color())
+        data['linecolor'] = toColorStr(self.lineColor())
+        data['linewidth'] = self.lineWidth()
+    
+    def fromDict(self, data: dict):
+        self.setRegion(data['region'])
+        self.setText(data.get('text', ''))
+        self.setIsMovable(data.get('movable', True))
+        if 'color' in data:
+            self.setColor(toQColor(data['color']))
+        if 'linecolor' in data:
+            self.setLineColor(toQColor(data['linecolor']))
+        if 'linewidth' in data:
+            self.setLineWidth(data['linewidth'])
+        self._data = data
+    
+    def updateData(self):
+        if hasattr(self, '_data'):
+            self.toDict(self._data)
 
 
 class XAxisRegion(AxisRegion):
