@@ -6,7 +6,8 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 import pyqtgraph as pg
-from pyqt_ext import ColorButton, toColorStr, toQColor
+from pyqt_ext.utils import toColorStr, toQColor
+from pyqt_ext.widgets import ColorButton
 
 
 class AxisRegion(pg.LinearRegionItem):

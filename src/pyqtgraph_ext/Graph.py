@@ -6,7 +6,8 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 import pyqtgraph as pg
-from pyqt_ext import toQColor, GraphStyle, editGraphStyle
+from pyqt_ext.utils import toQColor
+from pyqt_ext.graph import GraphStyle, editGraphStyle
 
 
 class Graph(pg.PlotDataItem):
