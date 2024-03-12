@@ -36,7 +36,7 @@ class AxisRegion(pg.LinearRegionItem):
         # update label position when region is moved or resized
         # TODO: disallow dragging label outside of viewbox
         self.sigRegionChanged.connect(self.updateLabelPosition)
-        self.sigRegionChangeFinished.connect(self.updateData)
+        self.sigRegionChangeFinished.connect(lambda self=self: self.toDict())
 
         self.setZValue(11)
     
@@ -49,7 +49,7 @@ class AxisRegion(pg.LinearRegionItem):
     def text(self):
         try:
             return self._textLabelItem.format
-        except:
+        except Exception:
             return ''
 
     def setText(self, text: str):
@@ -101,12 +101,11 @@ class AxisRegion(pg.LinearRegionItem):
             if self.raiseContextMenu(event):
                 event.accept()
     
-    # !!! uncomment for right-click context menu
-    # def mouseClickEvent(self, event):
-    #     if event.button() == Qt.RightButton:
-    #         if self.boundingRect().contains(event.pos()):
-    #             if self.raiseContextMenu(event):
-    #                 event.accept()
+    def mouseClickEvent(self, event):
+        if event.button() == Qt.RightButton:
+            if self.boundingRect().contains(event.pos()):
+                if self.raiseContextMenu(event):
+                    event.accept()
     
     def raiseContextMenu(self, event):
         menu = self.getContextMenus(event)
@@ -119,10 +118,11 @@ class AxisRegion(pg.LinearRegionItem):
 
         self._thisItemMenu = QMenu(self.__class__.__name__)
         self._thisItemMenu.addAction('Edit', lambda: self.editDialog())
-        self._thisItemMenu.addSeparator()
-        self._thisItemMenu.addAction('Hide', lambda: self.setVisible(False))
-        self._thisItemMenu.addSeparator()
-        self._thisItemMenu.addAction('Delete', lambda: self.getViewBox().deleteItem(self))
+        # the XAxisRegionTreeView manager will handle this...
+        # self._thisItemMenu.addSeparator()
+        # self._thisItemMenu.addAction('Hide', lambda: self.setVisible(False))
+        # self._thisItemMenu.addSeparator()
+        # self._thisItemMenu.addAction('Delete', lambda: self.getViewBox().deleteItem(self))
         self.menu.addMenu(self._thisItemMenu)
 
         # Let the scene add on to the end of our context menu (this is optional)
@@ -195,6 +195,9 @@ class AxisRegion(pg.LinearRegionItem):
         # do this last so that the sigRegionChanged signal can be used for all things in this dialog
         limits = sorted([float(minEdit.text()), float(maxEdit.text())])
         self.setRegion(limits)
+
+        # in case region was unchanged, we still want this signal to be emitted
+        self.sigRegionChangeFinished.emit(self)
     
     def toDict(self, data: dict = None):
         if data is None:
@@ -219,10 +222,6 @@ class AxisRegion(pg.LinearRegionItem):
         if 'linewidth' in data:
             self.setLineWidth(data['linewidth'])
         self._data = data
-    
-    def updateData(self):
-        if hasattr(self, '_data'):
-            self.toDict(self._data)
 
 
 class XAxisRegion(AxisRegion):

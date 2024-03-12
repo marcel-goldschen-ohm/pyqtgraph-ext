@@ -95,6 +95,12 @@ class XAxisRegionTreeView(TreeView):
         
         return menu
     
+    def addRegion(self, region: dict, is_selected: bool = True):
+        item = XAxisRegionTreeItem(region)
+        self.model().appendItems([item], QModelIndex())
+        if is_selected:
+            self.selectionModel().select(self.model().indexFromItem(item), QItemSelectionModel.SelectionFlag.Select)
+    
     def addGroup(self, name: str = 'New Group'):
         groupItem = XAxisRegionTreeItem({name: []})
         self.model().insertItems(0, [groupItem], QModelIndex())
@@ -104,116 +110,128 @@ class XAxisRegionTreeView(TreeView):
         if not selectedRegions:
             return
         
-        # dlg = QDialog(self)
-        # dlg.setWindowTitle('Selected X axis regions')
-        # form = QFormLayout(dlg)
-        # form.setContentsMargins(5, 5, 5, 5)
-        # form.setSpacing(5)
+        dlg = QDialog(self)
+        dlg.setWindowTitle('Selected X axis regions')
+        form = QFormLayout(dlg)
+        form.setContentsMargins(5, 5, 5, 5)
+        form.setSpacing(5)
 
-        # lb, ub = selectedRegions[0]['region']
-        # for i in range(1, len(selectedRegions)):
-        #     lb_, ub_ = selectedRegions[i]['region']
-        #     if lb_ != lb:
-        #         lb = None
-        #     if ub_ != ub:
-        #         ub = None
-        # if lb is not None:
-        #     minEdit = QLineEdit(f'{lb:.6f}')
-        # else:
-        #     minEdit = QLineEdit('')
-        # if ub is not None:
-        #     maxEdit = QLineEdit(f'{ub:.6f}')
-        # else:
-        #     maxEdit = QLineEdit('')
-        # form.addRow('Min', minEdit)
-        # form.addRow('Max', maxEdit)
+        lb, ub = selectedRegions[0]['region']
+        for i in range(1, len(selectedRegions)):
+            lb_, ub_ = selectedRegions[i]['region']
+            if lb_ != lb:
+                lb = None
+            if ub_ != ub:
+                ub = None
+        if lb is not None:
+            minEdit = QLineEdit(f'{lb:.6f}')
+        else:
+            minEdit = QLineEdit('')
+        if ub is not None:
+            maxEdit = QLineEdit(f'{ub:.6f}')
+        else:
+            maxEdit = QLineEdit('')
+        form.addRow('Min', minEdit)
+        form.addRow('Max', maxEdit)
 
-        # movable = selectedRegions[0].get('movable', True)
-        # movableCheckBox = QCheckBox()
-        # movableCheckBox.setChecked(movable)
-        # form.addRow('Movable', movableCheckBox)
+        movable = selectedRegions[0].get('movable', True)
+        for i in range(1, len(selectedRegions)):
+            if movable != selectedRegions[i].get('movable', True):
+                movable = None
+                break
+        movableCheckBox = QCheckBox()
+        if movable is not None:
+            movableCheckBox.setChecked(movable)
+        else:
+            movableCheckBox.setTristate(True)
+            movableCheckBox.setCheckState(Qt.CheckState.PartiallyChecked)
+        form.addRow('Movable', movableCheckBox)
 
-        # color = selectedRegions[0].get('color', None)
-        # for i in range(1, len(selectedRegions)):
-        #     color_ = selectedRegions[i].get('color', None)
-        #     if color_ != color:
-        #         color = None
-        #         break
-        # colorButton = ColorButton(color)
-        # form.addRow('Color', colorButton)
+        color = selectedRegions[0].get('color', None)
+        for i in range(1, len(selectedRegions)):
+            if color != selectedRegions[i].get('color', None):
+                color = None
+                break
+        colorButton = ColorButton(color)
+        form.addRow('Color', colorButton)
 
-        # lineColor = selectedRegions[0].get('linecolor', None)
-        # for i in range(1, len(selectedRegions)):
-        #     lineColor_ = selectedRegions[i].get('linecolor', None)
-        #     if lineColor_ != lineColor:
-        #         lineColor = None
-        #         break
-        # lineColorButton = ColorButton(lineColor)
-        # form.addRow('Line Color', lineColorButton)
+        lineColor = selectedRegions[0].get('linecolor', None)
+        for i in range(1, len(selectedRegions)):
+            if lineColor != selectedRegions[i].get('linecolor', None):
+                lineColor = None
+                break
+        lineColorButton = ColorButton(lineColor)
+        form.addRow('Line Color', lineColorButton)
 
-        # lineWidth = selectedRegions[0].get('linewidth', 1)
-        # lineWidthSpinBox = QDoubleSpinBox()
-        # lineWidthSpinBox.setValue(lineWidth)
-        # form.addRow('Line Width', lineWidthSpinBox)
+        lineWidth = selectedRegions[0].get('linewidth', 1)
+        for i in range(1, len(selectedRegions)):
+            if lineWidth != selectedRegions[i].get('linewidth', 1):
+                lineWidth = -1
+                break
+        lineWidthSpinBox = QDoubleSpinBox()
+        lineWidthSpinBox.setValue(lineWidth)
+        form.addRow('Line Width', lineWidthSpinBox)
 
-        # text = selectedRegions[0].get('text', '')
-        # for i in range(1, len(selectedRegions)):
-        #     text_ = selectedRegions[i].get('text', '')
-        #     if text_ != text:
-        #         text = ''
-        #         break
-        # textEdit = QTextEdit()
-        # if text is not None and text != '':
-        #     textEdit.setPlainText(text)
-        # form.addRow('Text', textEdit)
+        text = selectedRegions[0].get('text', '')
+        for i in range(1, len(selectedRegions)):
+            if text != selectedRegions[i].get('text', ''):
+                text = ''
+                break
+        textEdit = QTextEdit()
+        if text is not None and text != '':
+            textEdit.setPlainText(text)
+        form.addRow('Text', textEdit)
 
-        # btns = QDialogButtonBox()
-        # btns.setStandardButtons(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
-        # btns.accepted.connect(dlg.accept)
-        # btns.rejected.connect(dlg.reject)
-        # form.addRow(btns)
+        btns = QDialogButtonBox()
+        btns.setStandardButtons(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
+        btns.accepted.connect(dlg.accept)
+        btns.rejected.connect(dlg.reject)
+        form.addRow(btns)
 
-        # dlg.move(QCursor.pos())
-        # dlg.setWindowModality(Qt.ApplicationModal)
-        # if dlg.exec() != QDialog.Accepted:
-        #     return
+        dlg.move(QCursor.pos())
+        dlg.setWindowModality(Qt.ApplicationModal)
+        if dlg.exec() != QDialog.Accepted:
+            return
         
-        # lb = minEdit.text().strip()
-        # ub = maxEdit.text().strip()
-        # if lb != '':
-        #     try:
-        #         lb = float(lb)
-        #     except:
-        #         QMessageBox.warning(self, 'Invalid range', 'Invalid range for region.', QMessageBox.StandardButton.Ok, QMessageBox.StandardButton.Ok)
-        #         return
-        #     for region in selectedRegions:
-        #         region['region'][0] = lb
-        # if ub != '':
-        #     try:
-        #         ub = float(ub)
-        #     except:
-        #         QMessageBox.warning(self, 'Invalid range', 'Invalid range for region.', QMessageBox.StandardButton.Ok, QMessageBox.StandardButton.Ok)
-        #         return
-        #     for region in selectedRegions:
-        #         region['region'][1] = ub
+        lb = minEdit.text().strip()
+        ub = maxEdit.text().strip()
+        if lb != '':
+            try:
+                lb = float(lb)
+            except Exception:
+                QMessageBox.warning(self, 'Invalid range', 'Invalid range for region.', QMessageBox.StandardButton.Ok, QMessageBox.StandardButton.Ok)
+                return
+            for region in selectedRegions:
+                region['region'][0] = lb
+        if ub != '':
+            try:
+                ub = float(ub)
+            except Exception:
+                QMessageBox.warning(self, 'Invalid range', 'Invalid range for region.', QMessageBox.StandardButton.Ok, QMessageBox.StandardButton.Ok)
+                return
+            for region in selectedRegions:
+                region['region'][1] = ub
         
-        # movable = movableCheckBox.isChecked()
-        # color = colorButton.color()
-        # lineColor = lineColorButton.color()
-        # lineWidth = lineWidthSpinBox.value()
-        # text = textEdit.toPlainText().strip()
+        if movableCheckBox.checkState() != Qt.CheckState.PartiallyChecked:
+            movable = movableCheckBox.isChecked()
+            for region in selectedRegions:
+                region['movable'] = movable
         
-        # for region in selectedRegions:
-        #     region['movable'] = movable
-        #     if color is not None:
-        #         region['color'] = toColorStr(color)
-        #     if lineColor is not None:
-        #         region['linecolor'] = toColorStr(lineColor)
-        #     region['linewidth'] = lineWidth
-        #     if text != '':
-        #         region['text'] = text
+        color = colorButton.color()
+        lineColor = lineColorButton.color()
+        lineWidth = lineWidthSpinBox.value()
+        text = textEdit.toPlainText().strip()
         
-        # self.updateTreeView()
+        for region in selectedRegions:
+            if color is not None:
+                region['color'] = toColorStr(color)
+            if lineColor is not None:
+                region['linecolor'] = toColorStr(lineColor)
+            region['linewidth'] = lineWidth
+            if text != '':
+                region['text'] = text
+        
+        self.updateTreeView()
     
     def deleteSelectedItems(self):
         answer = QMessageBox.question(self, 'Delete selection?', 'Delete selection?', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
@@ -236,66 +254,66 @@ class XAxisRegionTreeView(TreeView):
         if not item.is_region():
             return
         
-        # dlg = QDialog(self)
-        # dlg.setWindowTitle('X axis region')
-        # form = QFormLayout(dlg)
-        # form.setContentsMargins(5, 5, 5, 5)
-        # form.setSpacing(5)
+        dlg = QDialog(self)
+        dlg.setWindowTitle('X axis region')
+        form = QFormLayout(dlg)
+        form.setContentsMargins(5, 5, 5, 5)
+        form.setSpacing(5)
 
-        # region = item._region['region']
-        # minEdit = QLineEdit(f'{region[0]:.6f}')
-        # maxEdit = QLineEdit(f'{region[1]:.6f}')
-        # form.addRow('Min', minEdit)
-        # form.addRow('Max', maxEdit)
+        lb, ub = item._data['region']
+        minEdit = QLineEdit(f'{lb:.6f}')
+        maxEdit = QLineEdit(f'{ub:.6f}')
+        form.addRow('Min', minEdit)
+        form.addRow('Max', maxEdit)
 
-        # movableCheckBox = QCheckBox()
-        # movableCheckBox.setChecked(item._region.get('movable', True))
-        # form.addRow('Movable', movableCheckBox)
+        movableCheckBox = QCheckBox()
+        movableCheckBox.setChecked(item._data.get('movable', True))
+        form.addRow('Movable', movableCheckBox)
 
-        # colorButton = ColorButton(item._region.get('color', None))
-        # form.addRow('Color', colorButton)
+        colorButton = ColorButton(item._data.get('color', None))
+        form.addRow('Color', colorButton)
 
-        # lineColorButton = ColorButton(item._region.get('linecolor', None))
-        # form.addRow('Line Color', lineColorButton)
+        lineColorButton = ColorButton(item._data.get('linecolor', None))
+        form.addRow('Line Color', lineColorButton)
 
-        # lineWidthSpinBox = QDoubleSpinBox()
-        # lineWidthSpinBox.setValue(item._region.get('linewidth', 1))
-        # form.addRow('Line Width', lineWidthSpinBox)
+        lineWidthSpinBox = QDoubleSpinBox()
+        lineWidthSpinBox.setValue(item._data.get('linewidth', 1))
+        form.addRow('Line Width', lineWidthSpinBox)
 
-        # text = item._region.get('text', '')
-        # textEdit = QTextEdit()
-        # if text is not None and text != '':
-        #     textEdit.setPlainText(text)
-        # form.addRow('Text', textEdit)
+        text = item._data.get('text', '')
+        textEdit = QTextEdit()
+        if text is not None and text != '':
+            textEdit.setPlainText(text)
+        form.addRow('Text', textEdit)
 
-        # btns = QDialogButtonBox()
-        # btns.setStandardButtons(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
-        # btns.accepted.connect(dlg.accept)
-        # btns.rejected.connect(dlg.reject)
-        # form.addRow(btns)
+        btns = QDialogButtonBox()
+        btns.setStandardButtons(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
+        btns.accepted.connect(dlg.accept)
+        btns.rejected.connect(dlg.reject)
+        form.addRow(btns)
 
-        # dlg.move(QCursor.pos())
-        # dlg.setWindowModality(Qt.ApplicationModal)
-        # if dlg.exec() != QDialog.Accepted:
-        #     return
+        dlg.move(QCursor.pos())
+        dlg.setWindowModality(Qt.ApplicationModal)
+        if dlg.exec() != QDialog.Accepted:
+            return
         
-        # try:
-        #     lb = float(minEdit.text())
-        #     ub = float(maxEdit.text())
-        # except:
-        #     QMessageBox.warning(self, 'Invalid range', 'Invalid range for region.', QMessageBox.StandardButton.Ok, QMessageBox.StandardButton.Ok)
-        #     return
+        try:
+            lb = float(minEdit.text())
+            ub = float(maxEdit.text())
+        except Exception:
+            QMessageBox.warning(self, 'Invalid range', 'Invalid range for region.', QMessageBox.StandardButton.Ok, QMessageBox.StandardButton.Ok)
+            return
         
-        # item._region['region'] = [lb, ub]
-        # item._region['movable'] = movableCheckBox.isChecked()
-        # color = colorButton.color()
-        # if color is not None:
-        #     item._region['color'] = toColorStr(color)
-        # lineColor = lineColorButton.color()
-        # if lineColor is not None:
-        #     item._region['linecolor'] = toColorStr(lineColor)
-        # item._region['linewidth'] = lineWidthSpinBox.value()
-        # item._region['text'] = textEdit.toPlainText()
+        item._data['region'] = [lb, ub]
+        item._data['movable'] = movableCheckBox.isChecked()
+        color = colorButton.color()
+        if color is not None:
+            item._data['color'] = toColorStr(color)
+        lineColor = lineColorButton.color()
+        if lineColor is not None:
+            item._data['linecolor'] = toColorStr(lineColor)
+        item._data['linewidth'] = lineWidthSpinBox.value()
+        item._data['text'] = textEdit.toPlainText()
         
         self.updatePlots()
     
@@ -316,41 +334,42 @@ class XAxisRegionTreeView(TreeView):
     def updatePlots(self):
         if not getattr(self, '_allow_plot_updates', True):
             return
-    #     selectedRegions = self.selectedRegions()
-    #     for plot in self.plots():
-    #         xdim = getattr(plot, '_xdim', None)
-    #         regionItems = [item for item in plot.vb.allChildren() if isinstance(item, XAxisRegion)]
-    #         for regionItem in regionItems:
-    #             # likely a bug in pyqtgraph, removing parent does not appropriately remove child items?
-    #             plot.vb.removeItem(regionItem._textLabelItem)
-    #             # now we can safely remove the parent region item
-    #             plot.vb.removeItem(regionItem)
-    #             regionItem.deleteLater()
-    #         for region in selectedRegions:
-    #             if (xdim is None) or (xdim == region.get('dim', None)):
-    #                 regionItem = XAxisRegion()
-    #                 regionItem.fromDict(region)
-    #                 plot.vb.addItem(regionItem)
-    #                 regionItem.toDict()  # updates region color, linecolor, etc.
-    #                 regionItem.sigRegionChangeFinished.connect(lambda item, self=self, region=region: self.updateRegion(region))
+        selectedRegions = self.selectedRegions()
+        for plot in self.plots():
+            xdim = getattr(plot, '_xdim', None)
+            regionItems = [item for item in plot.vb.allChildren() if isinstance(item, XAxisRegion)]
+            for regionItem in regionItems:
+                # likely a bug in pyqtgraph, removing parent does not appropriately remove child items?
+                plot.vb.removeItem(regionItem._textLabelItem)
+                # now we can safely remove the parent region item
+                plot.vb.removeItem(regionItem)
+                regionItem.deleteLater()
+            for region in selectedRegions:
+                if (xdim is None) or (xdim == region.get('dim', None)):
+                    regionItem = XAxisRegion()
+                    regionItem.fromDict(region)
+                    plot.vb.addItem(regionItem)
+                    regionItem.toDict()  # updates region color, linecolor, etc.
+                    regionItem.sigRegionChangeFinished.connect(lambda item, self=self, region=region: self.updateRegion(region))
     
-    # def updateRegion(self, region: dict):
-    #     # update region's tree view item
-    #     for item in self.model().root().depth_first():
-    #         if item.is_region() and item._data is region:
-    #             index: QModelIndex = self.model().createIndex(item.sibling_index, 0, item)
-    #             self.model().dataChanged.emit(index, index)
-    #             break
+    def updateRegion(self, region: dict):
+        # update region's tree view item
+        for item in self.model().root().depth_first():
+            if item.is_region() and item._data is region:
+                index: QModelIndex = self.model().createIndex(item.sibling_index, 0, item)
+                self.model().dataChanged.emit(index, index)
+                break
     
-    # def updateTreeView(self):
-    #     self._allow_plot_updates = False
-    #     self.resetModel()
-    #     self._allow_plot_updates = True
-    #     self.updatePlots()
+    def updateTreeView(self):
+        self._allow_plot_updates = False
+        # don't update plots for every dataChanged signal during resetModel
+        self.resetModel()
+        self._allow_plot_updates = True
+        self.updatePlots()
 
 
 def test_live():
-    from pyqtgraph_ext import AxisRegionDndTreeModel
+    from pyqtgraph_ext import AxisRegionDndTreeModel, PlotGrid
     
     app = QApplication()
 
@@ -374,7 +393,6 @@ def test_live():
     view.show()
     view.resize(QSize(400, 400))
 
-    from pyqtgraph_ext import PlotGrid
     grid = PlotGrid(2, 1)
     grid.setHasRegularLayout(True)
     for plot in grid.plots():
@@ -382,6 +400,10 @@ def test_live():
     view.setPlots(grid.plots())
     grid.show()
     QTimer.singleShot(300, lambda: grid.applyRegularLayout())
+
+    view.addRegion({'region': [15, 16], 'dim': 'x'})
+    view.addRegion({'region': [25, 26], 'dim': 'x'})
+
     app.exec()
 
 if __name__ == '__main__':
