@@ -2,9 +2,7 @@
 """
 
 from __future__ import annotations
-from qtpy.QtCore import *
-from qtpy.QtGui import *
-from qtpy.QtWidgets import *
+from qtpy.QtGui import QColor
 import pyqtgraph as pg
 from pyqtgraph_ext import View
 
@@ -18,6 +16,7 @@ class Plot(pg.PlotItem):
         if 'pen' not in kwargs:
             # MATLAB color scheme
             kwargs['pen'] = pg.mkPen(QColor.fromRgbF(0.15, 0.15, 0.15), width=1)
+        print(kwargs)
         pg.PlotItem.__init__(self, *args, **kwargs)
 
         # MATLAB color scheme

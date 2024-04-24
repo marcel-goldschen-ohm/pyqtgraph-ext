@@ -28,7 +28,6 @@ REGIONS TREE:
 
 from __future__ import annotations
 from pyqt_ext.tree import AbstractTreeItem
-from pyqtgraph_ext import AxisRegion
 
 
 class XAxisRegionTreeItem(AbstractTreeItem):

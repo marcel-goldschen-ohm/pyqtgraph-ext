@@ -5,9 +5,9 @@ from __future__ import annotations
 from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
-from pyqt_ext.tree import TreeView, KeyValueTreeItem, KeyValueTreeModel, KeyValueTreeView
-from pyqt_ext.utils import toQColor, toColorStr
+from pyqt_ext.utils import toColorStr
 from pyqt_ext.widgets import ColorButton
+from pyqt_ext.tree import TreeView
 import pyqtgraph as pg
 from pyqtgraph_ext import AxisRegion, XAxisRegion, XAxisRegionTreeItem, XAxisRegionTreeModel
 
@@ -23,7 +23,12 @@ class XAxisRegionTreeView(TreeView):
 
     def setModel(self, model: XAxisRegionTreeModel):
         TreeView.setModel(self, model)
-        self.model().dataChanged.connect(self.updatePlots)
+        self.model().dataChanged.connect(self.onModelDataChanged)
+    
+    @Slot(QModelIndex, QModelIndex)
+    def onModelDataChanged(self, topLeft: QModelIndex, bottomRight: QModelIndex):
+        if getattr(self, '_allow_plot_updates', True):
+            self.updatePlots()
     
     def mousePressEvent(self, event: QMouseEvent):
         if event.button() == Qt.MouseButton.LeftButton:

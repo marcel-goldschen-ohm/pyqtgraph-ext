@@ -6,7 +6,7 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 import pyqtgraph as pg
-from pyqtgraph_ext import AxisRegion, XAxisRegion, YAxisRegion, Graph
+from pyqtgraph_ext import XAxisRegion, YAxisRegion
 
 
 class View(pg.ViewBox):
