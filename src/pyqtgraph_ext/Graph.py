@@ -107,21 +107,19 @@ class Graph(pg.PlotDataItem):
         style.setLineWidth(pen.widthF())
         style.setMarker(self.opts.get('symbol', 'none'))
         style.setMarkerSize(self.opts.get('symbolSize', 10))
+        style.setMarkerEdgeStyle(symbolPen.style())
         style.setMarkerEdgeWidth(symbolPen.widthF())
-        markerEdgeColor = symbolPen.color()
-        if markerEdgeColor == pen.color():
-            markerEdgeColor = 'auto'
-        style.setMarkerEdgeColor(markerEdgeColor)
-        markerFaceColor = symbolBrush.color()
-        if markerFaceColor.alpha() == 0:
-            markerFaceColor = 'auto'
-        style.setMarkerFaceColor(markerFaceColor)
+        if symbolPen.color() != pen.color():
+            style.setMarkerEdgeColor(symbolPen.color())
+        if symbolBrush.color() != symbolPen.color():
+            style.setMarkerFaceColor(symbolBrush.color())
 
         return style
     
-    def setGraphStyle(self, style: GraphStyle, colorIndex=None):
+    def setGraphStyle(self, style: GraphStyle, colorIndex: int | None = None) -> int | None:
         # color
-        if style.color() == 'auto':
+        color = style.color()
+        if color is None:
             if colorIndex is not None:
                 try:
                     axes = self.getViewBox()
@@ -130,16 +128,18 @@ class Graph(pg.PlotDataItem):
                     color = toQColor(color)
                     colorIndex += 1
                 except:
-                    color = self.graphStyle().qcolor()
+                    color = toQColor(self.graphStyle().color())
             else:
-                color = self.graphStyle().qcolor()
+                color = toQColor(self.graphStyle().color())
         else:
-            color = style.qcolor()
+            color = toQColor(color)
 
         # line
-        lineStyle: Qt.PenStyle = style.lineQtPenStyle()
+        lineStyle: str = style.lineStyle()
+        lineStyles = ['none', '-', '--', ':', '.-']
+        linePenStyle: Qt.PenStyle = Qt.PenStyle(lineStyles.index(lineStyle))
         lineWidth = style.lineWidth()
-        linePen = pg.mkPen(color=color, width=lineWidth, style=lineStyle)
+        linePen = pg.mkPen(color=color, width=lineWidth, style=linePenStyle)
         self.setPen(linePen)
 
         # marker
@@ -151,21 +151,23 @@ class Graph(pg.PlotDataItem):
         markerSize = style.markerSize()
         self.setSymbolSize(markerSize)
 
+        markerEdgeStyle = style.markerEdgeStyle()
+        markerEdgeStyles = ['none', '-', '--', ':', '.-']
+        markerEdgePenStyle: Qt.PenStyle = Qt.PenStyle(markerEdgeStyles.index(markerEdgeStyle))
         markerEdgeWidth = style.markerEdgeWidth()
         markerEdgeColor = style.markerEdgeColor()
-        if markerEdgeColor == 'auto':
+        if markerEdgeColor is None:
             markerEdgeColor = color
         else:
-            markerEdgeColor = style.markerEdgeQColor()
-        symbolPen = pg.mkPen(color=markerEdgeColor, width=markerEdgeWidth)
+            markerEdgeColor = toQColor(markerEdgeColor)
+        symbolPen = pg.mkPen(color=markerEdgeColor, width=markerEdgeWidth, style=markerEdgePenStyle)
         self.setSymbolPen(symbolPen)
 
         markerFaceColor = style.markerFaceColor()
-        if markerFaceColor == 'auto':
+        if markerFaceColor is None:
             markerFaceColor = markerEdgeColor
-            markerFaceColor.setAlpha(0)
         else:
-            markerFaceColor = style.markerFaceQColor()
+            markerFaceColor = toQColor(markerFaceColor)
         self.setSymbolBrush(markerFaceColor)
         
         return colorIndex
@@ -178,7 +180,7 @@ class Graph(pg.PlotDataItem):
         if style is not None:
             self.setGraphStyle(style)
 
-    def setColor(self, color: QColor):
-        style: ChartDataStyle = self.graphStyle()
-        style.setColor(color)
-        self.setGraphStyle(style)
+    # def setColor(self, color: QColor):
+    #     style: ChartDataStyle = self.graphStyle()
+    #     style.setColor(color)
+    #     self.setGraphStyle(style)
