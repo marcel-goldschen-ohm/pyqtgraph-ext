@@ -136,8 +136,7 @@ class Graph(pg.PlotDataItem):
 
         # line
         lineStyle: str = style.lineStyle()
-        lineStyles = ['none', '-', '--', ':', '.-']
-        linePenStyle: Qt.PenStyle = Qt.PenStyle(lineStyles.index(lineStyle))
+        linePenStyle: Qt.PenStyle = GraphStyle.penstyles[GraphStyle.linestyles.index(lineStyle)]
         lineWidth = style.lineWidth()
         linePen = pg.mkPen(color=color, width=lineWidth, style=linePenStyle)
         self.setPen(linePen)
@@ -152,8 +151,7 @@ class Graph(pg.PlotDataItem):
         self.setSymbolSize(markerSize)
 
         markerEdgeStyle = style.markerEdgeStyle()
-        markerEdgeStyles = ['none', '-', '--', ':', '.-']
-        markerEdgePenStyle: Qt.PenStyle = Qt.PenStyle(markerEdgeStyles.index(markerEdgeStyle))
+        markerEdgePenStyle: Qt.PenStyle = GraphStyle.penstyles[GraphStyle.linestyles.index(markerEdgeStyle)]
         markerEdgeWidth = style.markerEdgeWidth()
         markerEdgeColor = style.markerEdgeColor()
         if markerEdgeColor is None:
@@ -176,11 +174,8 @@ class Graph(pg.PlotDataItem):
         name = self.name()
         if name is None:
             name = self.__class__.__name__
-        style: GraphStyle | None = editGraphStyle(self.graphStyle(), parent = self.getViewBox().getViewWidget(), title = name)
-        if style is not None:
-            self.setGraphStyle(style)
-
-    # def setColor(self, color: QColor):
-    #     style: ChartDataStyle = self.graphStyle()
-    #     style.setColor(color)
-    #     self.setGraphStyle(style)
+        old_style: GraphStyle = self.graphStyle()
+        new_style: GraphStyle | None = editGraphStyle(old_style, parent = self.getViewBox().getViewWidget(), title = name)
+        if new_style is None:
+            return
+        self.setGraphStyle(new_style)
