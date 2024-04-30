@@ -9,10 +9,10 @@ from pyqt_ext.utils import toColorStr
 from pyqt_ext.widgets import ColorButton
 from pyqt_ext.tree import TreeView
 import pyqtgraph as pg
-from pyqtgraph_ext import AxisRegion, XAxisRegion, XAxisRegionTreeItem, XAxisRegionTreeModel
+from pyqtgraph_ext import AxisRegion, XAxisRegion, YAxisRegion, AxisRegionTreeItem, AxisRegionTreeModel
 
 
-class XAxisRegionTreeView(TreeView):
+class AxisRegionTreeView(TreeView):
 
     def __init__(self, parent: QObject = None) -> None:
         TreeView.__init__(self, parent)
@@ -21,9 +21,10 @@ class XAxisRegionTreeView(TreeView):
 
         self.selectionWasChanged.connect(self.updatePlots)
 
-    def setModel(self, model: XAxisRegionTreeModel):
+    def setModel(self, model: AxisRegionTreeModel):
         TreeView.setModel(self, model)
         self.model().dataChanged.connect(self.onModelDataChanged)
+        self.model().rowsRemoved.connect(self.onModelDataChanged)
     
     @Slot(QModelIndex, QModelIndex)
     def onModelDataChanged(self, topLeft: QModelIndex, bottomRight: QModelIndex):
@@ -41,41 +42,57 @@ class XAxisRegionTreeView(TreeView):
     
     @Slot(QItemSelection, QItemSelection)
     def selectionChanged(self, selected: QItemSelection, deselected: QItemSelection):
+        # print('\n\nSelected:')
+        # for i, index in enumerate(selected.indexes()):
+        #     print(i, self.model().itemFromIndex(index).get_data(0))
+
+        # print('\n\nDeselected:')
+        # for i, index in enumerate(deselected.indexes()):
+        #     print(i, self.model().itemFromIndex(index).get_data(0))
+
         QTreeView.selectionChanged(self, selected, deselected)
-        
+
         if getattr(self, '_is_updating_selections', False):
             return
         self._is_updating_selections = True
-        selection_items: list[XAxisRegionTreeItem] = self.selectedItems()
         
         # if group was selected, select all regions in group
-        selected_items: list[XAxisRegionTreeItem] = [self.model().itemFromIndex(index) for index in selected.indexes()]
-        for item in selected_items:
+        indexes = selected.indexes()
+        for index in indexes:
+            item = self.model().itemFromIndex(index)
             if item.is_group():
                 for child in item.children:
-                    if child not in selection_items:
-                        child_index = self.model().createIndex(child.sibling_index, 0, child)
-                        self.selectionModel().select(child_index, QItemSelectionModel.SelectionFlag.Select)
-                        selection_items.append(child)
+                    child_index = self.model().createIndex(child.sibling_index, 0, child)
+                    if not self.selectionModel().isSelected(child_index):
+                        flags = (
+                            QItemSelectionModel.SelectionFlag.Select |
+                            QItemSelectionModel.SelectionFlag.Rows
+                        )
+                        self.selectionModel().select(child_index, flags)
         
         # if group was deselected, deselect all regions in group
-        deselected_items: list[XAxisRegionTreeItem] = [self.model().itemFromIndex(index) for index in deselected.indexes()]
-        for item in deselected_items:
+        indexes = deselected.indexes()
+        for index in indexes:
+            item = self.model().itemFromIndex(index)
             if item.is_group():
                 for child in item.children:
-                    if child not in selected_items:
-                        if child in selection_items:
-                            child_index = self.model().createIndex(child.sibling_index, 0, child)
-                            self.selectionModel().select(child_index, QItemSelectionModel.SelectionFlag.Deselect)
-                            selection_items.remove(child)
+                    child_index = self.model().createIndex(child.sibling_index, 0, child)
+                    if self.selectionModel().isSelected(child_index):
+                        flags = (
+                            QItemSelectionModel.SelectionFlag.Deselect |
+                            QItemSelectionModel.SelectionFlag.Rows
+                        )
+                        self.selectionModel().select(child_index, flags)
         
         self._is_updating_selections = False
+        
+        # ensure plots are updated
         self.selectionWasChanged.emit()
 
     def contextMenu(self, index: QModelIndex = QModelIndex()) -> QMenu:
         menu: QMenu = TreeView.contextMenu(self, index)
        
-        model: XAxisRegionTreeModel = self.model()
+        model: AxisRegionTreeModel = self.model()
         if model is None:
             return menu
         
@@ -89,7 +106,7 @@ class XAxisRegionTreeView(TreeView):
         if not index.isValid():
             return menu
         
-        item: XAxisRegionTreeItem = model.itemFromIndex(index)
+        item: AxisRegionTreeItem = model.itemFromIndex(index)
         itemMenu = QMenu(item.name)
         if item.is_region():
             itemMenu.addAction('Edit', lambda item=item: self.editRegion(item))
@@ -101,13 +118,17 @@ class XAxisRegionTreeView(TreeView):
         return menu
     
     def addRegion(self, region: dict, is_selected: bool = True):
-        item = XAxisRegionTreeItem(region)
+        item = AxisRegionTreeItem(region)
         self.model().appendItems([item], QModelIndex())
         if is_selected:
-            self.selectionModel().select(self.model().indexFromItem(item), QItemSelectionModel.SelectionFlag.Select)
+            flags = (
+                QItemSelectionModel.SelectionFlag.Select |
+                QItemSelectionModel.SelectionFlag.Rows
+            )
+            self.selectionModel().select(self.model().indexFromItem(item), flags)
     
     def addGroup(self, name: str = 'New Group'):
-        groupItem = XAxisRegionTreeItem({name: []})
+        groupItem = AxisRegionTreeItem({name: []})
         self.model().insertItems(0, [groupItem], QModelIndex())
     
     def editSelectedRegions(self):
@@ -255,7 +276,7 @@ class XAxisRegionTreeView(TreeView):
 
         self.updatePlots()
     
-    def editRegion(self, item: XAxisRegionTreeItem):
+    def editRegion(self, item: AxisRegionTreeItem):
         if not item.is_region():
             return
         
@@ -322,7 +343,7 @@ class XAxisRegionTreeView(TreeView):
         
         self.updatePlots()
     
-    def deleteItem(self, item: XAxisRegionTreeItem):
+    def deleteItem(self, item: AxisRegionTreeItem):
         self.askToRemoveItem(item)
         self.updatePlots()
     
@@ -335,26 +356,41 @@ class XAxisRegionTreeView(TreeView):
     
     def setPlots(self, plots: list[pg.PlotItem]):
         self._plots = plots
+        self.updatePlots()
     
     def updatePlots(self):
+        if getattr(self, '_is_updating_selections', False):
+            return
         if not getattr(self, '_allow_plot_updates', True):
             return
         selectedRegions = self.selectedRegions()
         for plot in self.plots():
-            xdim = getattr(plot, '_xdim', None)
-            regionItems = [item for item in plot.vb.allChildren() if isinstance(item, XAxisRegion)]
+            xdim, ydim = getattr(plot, '_dims', ['x', 'y'])
+            # clear current region items
+            regionItems = [item for item in plot.vb.allChildren() if isinstance(item, AxisRegion)]
             for regionItem in regionItems:
                 # likely a bug in pyqtgraph, removing parent does not appropriately remove child items?
                 plot.vb.removeItem(regionItem._textLabelItem)
                 # now we can safely remove the parent region item
                 plot.vb.removeItem(regionItem)
                 regionItem.deleteLater()
+            # add selected region items
             for region in selectedRegions:
-                if (xdim is None) or (xdim == region.get('dim', None)):
+                regionItem = None
+                isx = xdim in region['region']
+                isy = ydim in region['region']
+                if isx and isy:
+                    pass # TODO: add support for 2D regions
+                elif isx:
                     regionItem = XAxisRegion()
-                    regionItem.fromDict(region)
+                    regionItem._dim = xdim
+                elif isy:
+                    regionItem = YAxisRegion()
+                    regionItem._dim = ydim
+                if regionItem is not None:
+                    regionItem.fromDict(region, regionItem._dim)
+                    regionItem._data = region
                     plot.vb.addItem(regionItem)
-                    regionItem.toDict()  # updates region color, linecolor, etc.
                     regionItem.sigRegionChangeFinished.connect(lambda item, self=self, region=region: self.updateRegion(region))
     
     def updateRegion(self, region: dict):
@@ -381,33 +417,34 @@ def test_live():
     data = [
         {
             'group A': [
-                {'region': [8, 9], 'dim': 't', 'text': 'my label\n details...'},
+                {'region': {'t': [8, 9]}, 'text': 'my label\n details...'}
             ],
         },
         {
             'group B': [
-                {'region': [3, 4], 'dim': 'x'},
+                {'region': {'x': [3, 4]}}, 
             ],
         },
-        {'region': [35, 45], 'dim': 'x'},
+        {'region': {'x': [35, 45]}}, 
     ]
-    root = XAxisRegionTreeItem(data)
+    root = AxisRegionTreeItem(data)
     model = AxisRegionDndTreeModel(root)
-    view = XAxisRegionTreeView()
+    view = AxisRegionTreeView()
     view.setModel(model)
     view.show()
     view.resize(QSize(400, 400))
 
     grid = PlotGrid(2, 1)
     grid.setHasRegularLayout(True)
-    for plot in grid.plots():
-        plot._xdim = 'x'
+    grid.plots()[1].setXLink(grid.plots()[0])
+    # for plot in grid.plots():
+    #     plot._dims = ['x', 'y']
     view.setPlots(grid.plots())
     grid.show()
     QTimer.singleShot(300, lambda: grid.applyRegularLayout())
 
-    view.addRegion({'region': [15, 16], 'dim': 'x'})
-    view.addRegion({'region': [25, 26], 'dim': 'x'})
+    view.addRegion({'region': {'x': [15, 16]}})
+    view.addRegion({'region': {'x': [25, 26]}})
 
     app.exec()
 

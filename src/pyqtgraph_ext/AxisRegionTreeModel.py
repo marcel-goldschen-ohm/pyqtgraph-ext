@@ -6,13 +6,13 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 from pyqt_ext.tree import AbstractTreeModel
-from pyqtgraph_ext import XAxisRegionTreeItem
+from pyqtgraph_ext import AxisRegionTreeItem
 import qtawesome as qta
 
 
-class XAxisRegionTreeModel(AbstractTreeModel):
+class AxisRegionTreeModel(AbstractTreeModel):
     
-    def __init__(self, root: XAxisRegionTreeItem = None, parent: QObject = None):
+    def __init__(self, root: AxisRegionTreeItem = None, parent: QObject = None):
         AbstractTreeModel.__init__(self, root, parent)
         self.setColumnLabels(['X-Axis Regions'])
     
@@ -28,7 +28,7 @@ class XAxisRegionTreeModel(AbstractTreeModel):
         flags = Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
         if self.supportedDropActions() != Qt.DropAction.IgnoreAction:
             flags |= Qt.ItemFlag.ItemIsDragEnabled
-            item: XAxisRegionTreeItem = self.itemFromIndex(index)
+            item: AxisRegionTreeItem = self.itemFromIndex(index)
             if item.is_group():
                 flags |= Qt.ItemFlag.ItemIsDropEnabled
         return flags
@@ -36,7 +36,7 @@ class XAxisRegionTreeModel(AbstractTreeModel):
     def data(self, index: QModelIndex, role: int):
         if not index.isValid():
             return
-        item: XAxisRegionTreeItem = self.itemFromIndex(index)
+        item: AxisRegionTreeItem = self.itemFromIndex(index)
         if role == Qt.ItemDataRole.DisplayRole or role == Qt.ItemDataRole.EditRole:
             return item.get_data(index.column())
         elif role == Qt.ItemDataRole.DecorationRole:
@@ -45,7 +45,7 @@ class XAxisRegionTreeModel(AbstractTreeModel):
                     return qta.icon('ph.folder-thin')
 
     def setData(self, index: QModelIndex, value, role: int) -> bool:
-        item: XAxisRegionTreeItem = self.itemFromIndex(index)
+        item: AxisRegionTreeItem = self.itemFromIndex(index)
         if role == Qt.ItemDataRole.EditRole:
             success: bool = item.set_data(index.column(), value)
             if success:
@@ -54,10 +54,10 @@ class XAxisRegionTreeModel(AbstractTreeModel):
         return False
 
 
-class AxisRegionDndTreeModel(XAxisRegionTreeModel):
+class AxisRegionDndTreeModel(AxisRegionTreeModel):
 
-    def __init__(self, root: XAxisRegionTreeItem = None, parent: QObject = None):
-        XAxisRegionTreeModel.__init__(self, root, parent)
+    def __init__(self, root: AxisRegionTreeItem = None, parent: QObject = None):
+        AxisRegionTreeModel.__init__(self, root, parent)
     
     def supportedDropActions(self) -> Qt.DropActions:
         return Qt.DropAction.MoveAction | Qt.DropAction.CopyAction

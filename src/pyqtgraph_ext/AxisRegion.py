@@ -30,8 +30,8 @@ class AxisRegion(pg.LinearRegionItem):
         self._textLabelItem: pg.InfLineLabel = pg.InfLineLabel(self.lines[0], text='', movable=True, position=1, anchors=[(0,0), (0,0)])
         self._textLabelItem.setVisible(False)
 
-        self.lines[0].sigClicked.connect(self.lineClicked)
-        self.lines[1].sigClicked.connect(self.lineClicked)
+        self.lines[0].sigClicked.connect(self.edgeLineClicked)
+        self.lines[1].sigClicked.connect(self.edgeLineClicked)
 
         # update label position when region is moved or resized
         # TODO: disallow dragging label outside of viewbox
@@ -71,19 +71,19 @@ class AxisRegion(pg.LinearRegionItem):
         self.brush.setColor(color)
         self.hoverBrush.setColor(color)
     
-    def lineColor(self) -> QColor:
+    def edgeLineColor(self) -> QColor:
         return self.lines[0].pen.color()
     
-    def setLineColor(self, color: QColor):
+    def setEdgeLineColor(self, color: QColor):
         self.lines[0].pen.setColor(color)
         self.lines[1].pen.setColor(color)
         self.lines[0].hoverPen.setColor(color)
         self.lines[1].hoverPen.setColor(color)
     
-    def lineWidth(self) -> float:
+    def edgeLineWidth(self) -> float:
         return self.lines[0].pen.width()
     
-    def setLineWidth(self, width: float):
+    def setEdgeLineWidth(self, width: float):
         self.lines[0].pen.setWidth(width)
         self.lines[1].pen.setWidth(width)
         self.lines[0].hoverPen.setWidth(width)
@@ -96,7 +96,7 @@ class AxisRegion(pg.LinearRegionItem):
             if pos < 0.05:
                 self._textLabelItem.setPosition(0.05)
     
-    def lineClicked(self, line, event):
+    def edgeLineClicked(self, line, event):
         if event.button() == Qt.RightButton:
             if self.raiseContextMenu(event):
                 event.accept()
@@ -152,11 +152,11 @@ class AxisRegion(pg.LinearRegionItem):
         colorButton = ColorButton(self.color())
         form.addRow('Color', colorButton)
 
-        lineColorButton = ColorButton(self.lineColor())
+        lineColorButton = ColorButton(self.edgeLineColor())
         form.addRow('Line Color', lineColorButton)
 
         lineWidthSpinBox = QDoubleSpinBox()
-        lineWidthSpinBox.setValue(self.lineWidth())
+        lineWidthSpinBox.setValue(self.edgeLineWidth())
         form.addRow('Line Width', lineWidthSpinBox)
 
         # label = self.label()
@@ -183,8 +183,8 @@ class AxisRegion(pg.LinearRegionItem):
         self.setIsMovable(movableCheckBox.isChecked())
 
         self.setColor(colorButton.color())
-        self.setLineColor(lineColorButton.color())
-        self.setLineWidth(lineWidthSpinBox.value())
+        self.setEdgeLineColor(lineColorButton.color())
+        self.setEdgeLineWidth(lineWidthSpinBox.value())
 
         # label = labelEdit.text().strip()
         # self.setLabel(label if label != '' else None)
@@ -199,28 +199,46 @@ class AxisRegion(pg.LinearRegionItem):
         # in case region was unchanged, we still want this signal to be emitted
         self.sigRegionChangeFinished.emit(self)
     
-    def toDict(self, data: dict = None):
+    def toDict(self, data: dict = None, dim: str = None):
+        if dim is None:
+            dim = getattr(self, '_dim', None)
         if data is None:
             if not hasattr(self, '_data'):
                 self._data = {}
             data = self._data
-        data['region'] = list(self.getRegion())
+        lims = list(sorted(self.getRegion()))
+        if dim is not None:
+            if 'region' not in data:
+                data['region'] = {}
+            data['region'][dim] = lims
+        # elif 'region' in data and isinstance(data['region'], dict) and len(data['region']) > 0:
+        #     dim = list(data['region'].keys())[0]
+        #     data['region'][dim] = lims
+        else:
+            data['region'] = lims
         data['text'] = self.text()
         data['movable'] = self.isMovable()
         data['color'] = toColorStr(self.color())
-        data['linecolor'] = toColorStr(self.lineColor())
-        data['linewidth'] = self.lineWidth()
+        data['edgecolor'] = toColorStr(self.edgeLineColor())
+        data['edgewidth'] = self.edgeLineWidth()
     
-    def fromDict(self, data: dict):
-        self.setRegion(data['region'])
+    def fromDict(self, data: dict, dim: str = None):
+        if dim is None:
+            dim = getattr(self, '_dim', None)
+        if 'region' in data:
+            if isinstance(data['region'], dict):
+                if dim is not None and dim in data['region']:
+                    self.setRegion(data['region'][dim])
+            elif isinstance(data['region'], list):
+                self.setRegion(data['region'])
         self.setText(data.get('text', ''))
         self.setIsMovable(data.get('movable', True))
         if 'color' in data:
             self.setColor(toQColor(data['color']))
-        if 'linecolor' in data:
-            self.setLineColor(toQColor(data['linecolor']))
-        if 'linewidth' in data:
-            self.setLineWidth(data['linewidth'])
+        if 'edgecolor' in data:
+            self.setEdgeLineColor(toQColor(data['edgecolor']))
+        if 'edgewidth' in data:
+            self.setEdgeLineWidth(data['edgewidth'])
         self._data = data
 
 
