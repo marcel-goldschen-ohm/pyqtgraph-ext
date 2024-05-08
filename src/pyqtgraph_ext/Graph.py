@@ -8,6 +8,7 @@ from qtpy.QtWidgets import *
 import pyqtgraph as pg
 from pyqt_ext.utils import toQColor
 from pyqt_ext.graph import GraphStyle, editGraphStyle
+from pyqt_ext.widgets import TableWidgetWithCopyPaste
 
 
 class Graph(pg.PlotDataItem):
@@ -71,6 +72,8 @@ class Graph(pg.PlotDataItem):
         self._thisItemMenu = QMenu(name)
         # self._thisItemMenu.addAction('Rename')
         # self._thisItemMenu.addSeparator()
+        self._thisItemMenu.addAction('Data table', self.dataDialog)
+        self._thisItemMenu.addSeparator()
         self._thisItemMenu.addAction('Style', self.styleDialog)
         # self._thisItemMenu.addSeparator()
         # self._thisItemMenu.addAction('Hide', lambda: self.setVisible(False))
@@ -179,3 +182,32 @@ class Graph(pg.PlotDataItem):
         if new_style is None:
             return
         self.setGraphStyle(new_style)
+    
+    def dataDialog(self):
+        dlg = QDialog()
+        dlg.setWindowTitle(self.name())
+        vbox = QVBoxLayout(dlg)
+        vbox.setContentsMargins(0, 0, 0, 0)
+        vbox.setSpacing(0)
+        xdata, ydata = self.getOriginalDataset()
+        n_rows = len(ydata)
+        n_cols = 2
+        table = TableWidgetWithCopyPaste(n_rows, n_cols)
+        for row in range(n_rows):
+            table.setItem(row, 0, QTableWidgetItem(str(xdata[row])))
+            table.setItem(row, 1, QTableWidgetItem(str(ydata[row])))
+        table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        xaxis = self.getViewBox().parentWidget().getAxis('bottom')
+        yaxis = self.getViewBox().parentWidget().getAxis('left')
+        xlabel = xaxis.labelText
+        if xaxis.labelUnits:
+            xlabel += f' ({xaxis.labelUnits})'
+        ylabel = yaxis.labelText
+        if yaxis.labelUnits:
+            ylabel += f' ({yaxis.labelUnits})'
+        table.setHorizontalHeaderLabels([xlabel, ylabel])
+        for col in range(n_cols):
+            table.resizeColumnToContents(col)
+        table.resizeRowsToContents()
+        vbox.addWidget(table)
+        dlg.exec()
