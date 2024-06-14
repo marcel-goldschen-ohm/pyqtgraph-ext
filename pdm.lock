@@ -5,7 +5,7 @@
 groups = ["default"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.1"
-content_hash = "sha256:abc4ad3921e21df1276e93b69ffa4a78f04e58aa4e25f51a669eb4cad1c039c5"
+content_hash = "sha256:efb9d7abc8185eceb67b3808513cf21cd6eaa62d41291d58c4bb119cb258c592"
 
 [[package]]
 name = "numpy"
@@ -65,7 +65,7 @@ files = [
 
 [[package]]
 name = "pyqt-ext"
-version = "1.2.0"
+version = "1.2.5"
 requires_python = ">=3.9"
 summary = "Collection of PyQt/PySide widgets/tools"
 groups = ["default"]
@@ -75,8 +75,8 @@ dependencies = [
     "qtpy>=2.4.1",
 ]
 files = [
-    {file = "pyqt_ext-1.2.0-py3-none-any.whl", hash = "sha256:586f268abd50ff16cdf3b412c8e5e1ad788206282ca14e39671ea30b1b1958a5"},
-    {file = "pyqt_ext-1.2.0.tar.gz", hash = "sha256:0a417fa86ee4b0e017c2cd2d1a036ca42523463f96531b3a9b8f6f715f8223fa"},
+    {file = "pyqt_ext-1.2.5-py3-none-any.whl", hash = "sha256:2bb8fb462fa846c42a39c42477267ae97d0b70cb12bfb7014dda62aa08d66c40"},
+    {file = "pyqt_ext-1.2.5.tar.gz", hash = "sha256:84c7bad20b5cc644766247808f1adb0df2ed88f538ba19f5ea2013448a4b6d7e"},
 ]
 
 [[package]]

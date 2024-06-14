@@ -206,7 +206,7 @@ class AxisRegion(pg.LinearRegionItem):
             if not hasattr(self, '_data'):
                 self._data = {}
             data = self._data
-        lims = list(sorted(self.getRegion()))
+        lims = tuple(sorted(self.getRegion()))
         if dim is not None:
             if 'region' not in data:
                 data['region'] = {}
@@ -229,7 +229,7 @@ class AxisRegion(pg.LinearRegionItem):
             if isinstance(data['region'], dict):
                 if dim is not None and dim in data['region']:
                     self.setRegion(data['region'][dim])
-            elif isinstance(data['region'], list):
+            elif isinstance(data['region'], tuple) or isinstance(data['region'], list):
                 self.setRegion(data['region'])
         self.setText(data.get('text', ''))
         self.setIsMovable(data.get('movable', True))

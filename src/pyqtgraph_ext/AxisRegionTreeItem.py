@@ -85,7 +85,7 @@ class AxisRegionTreeItem(AbstractTreeItem):
         if label:
             label = label.split('\n')[0].strip()
         if not label:
-            region: dict | list = self._data['region']
+            region: dict | tuple = self._data['region']
             if isinstance(region, dict):
                 dimlabels = []
                 for dim in region:
@@ -94,7 +94,7 @@ class AxisRegionTreeItem(AbstractTreeItem):
                     ub = f'{lims[1]:.6f}'.rstrip('0').rstrip('.')
                     dimlabels.append(f'{dim}: {lb}-{ub}')
                 label = ', '.join(dimlabels)
-            elif isinstance(region, list):
+            elif isinstance(region, tuple):
                 lims = region
                 lb = f'{lims[0]:.6f}'.rstrip('0').rstrip('.')
                 ub = f'{lims[1]:.6f}'.rstrip('0').rstrip('.')
@@ -192,15 +192,15 @@ def test_tree():
     data = [
         {
             'group A': [
-                {'region': {'t': [8, 9]}, 'text': 'my label\n details...'}
+                {'region': {'t': (8, 9)}, 'text': 'my label\n details...'}
             ],
         },
         {
             'group B': [
-                {'region': {'x': [3, 4]}}, 
+                {'region': {'x': (3, 4)}}, 
             ],
         },
-        {'region': {'x': [35, 45]}}, 
+        {'region': {'x': (35, 45)}}, 
     ]
     # print(json.dumps(data, indent=2))
 
