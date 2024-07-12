@@ -78,6 +78,21 @@ class AxisRegionTreeItem(AbstractTreeItem):
         self._data[name] = self._data.pop(self.group_name)
     
     @property
+    def region(self) -> dict | tuple | None:
+        if self.is_region():
+            return self._data['region']
+    
+    @region.setter
+    def region(region: dict | tuple | str):
+        if isinstance(region, str):
+            region = str2region(region)
+        self._data['region'] = region
+    
+    def region_str(self) -> str:
+        if self.is_region():
+            return region2str(self._data['region'])
+    
+    @property
     def region_label(self) -> str | None:
         if not self.is_region():
             return None
@@ -85,20 +100,7 @@ class AxisRegionTreeItem(AbstractTreeItem):
         if label:
             label = label.split('\n')[0].strip()
         if not label:
-            region: dict | tuple = self._data['region']
-            if isinstance(region, dict):
-                dimlabels = []
-                for dim in region:
-                    lims = region[dim]
-                    lb = f'{lims[0]:.6f}'.rstrip('0').rstrip('.')
-                    ub = f'{lims[1]:.6f}'.rstrip('0').rstrip('.')
-                    dimlabels.append(f'{dim}: {lb}-{ub}')
-                label = ', '.join(dimlabels)
-            elif isinstance(region, tuple):
-                lims = region
-                lb = f'{lims[0]:.6f}'.rstrip('0').rstrip('.')
-                ub = f'{lims[1]:.6f}'.rstrip('0').rstrip('.')
-                label = f'{lb}-{ub}'
+            label = region2str(self._data['region'])
         return label
     
     @region_label.setter
@@ -184,6 +186,37 @@ class AxisRegionTreeItem(AbstractTreeItem):
                 self.group_name = value
                 return True
         return False
+
+
+def region2str(region: dict | tuple) -> str:
+    if isinstance(region, dict):
+        dim_labels = []
+        for dim in region:
+            lims = region[dim]
+            lb = f'{lims[0]:.6f}'.rstrip('0').rstrip('.')
+            ub = f'{lims[1]:.6f}'.rstrip('0').rstrip('.')
+            dim_labels.append(f'{dim}: ({lb}, {ub})')
+        return ', '.join(dim_labels)
+    elif isinstance(region, tuple):
+        lims = region
+        lb = f'{lims[0]:.6f}'.rstrip('0').rstrip('.')
+        ub = f'{lims[1]:.6f}'.rstrip('0').rstrip('.')
+        return f'({lb}, {ub})'
+
+
+def str2region(region_str: str) -> dict | tuple:
+    if ':' in region_str:
+        region = {}
+        dim_regions = region_str.split('),')
+        for dim_region in dim_regions:
+            dim, lims = dim_region.split(':')
+            lb, ub = lims.strip().strip('()').split(',')
+            region[dim.strip()] = (float(lb), float(ub))
+        return region
+    
+    lb, ub = region_str.strip().strip('()').split(',')
+    region = (float(lb), float(ub))
+    return region
 
 
 def test_tree():

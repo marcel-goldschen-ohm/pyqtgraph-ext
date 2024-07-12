@@ -106,14 +106,14 @@ class AxisRegionTreeView(TreeView):
         if not index.isValid():
             return menu
         
-        item: AxisRegionTreeItem = model.itemFromIndex(index)
-        itemMenu = QMenu(item.name)
+        item: XarrayTreeItem = model.itemFromIndex(index)
         if item.is_region():
-            itemMenu.addAction('Edit', lambda item=item: self.editRegion(item))
-            itemMenu.addSeparator()
-        itemMenu.addAction('Delete', lambda item=item: self.deleteItem(item))
-        menu.insertMenu(menu.actions()[0], itemMenu)
-        menu.insertSeparator(menu.actions()[1])
+            item_action = menu.actions()[0]
+            item_menu = menu.menuInAction(item_action)
+            delete_action = item_menu.actions()[0]
+            item_menu.addAction('Edit', lambda item=item: self.editRegion(item))
+            item_menu.addSeparator()
+            item_menu.addAction(delete_action)
         
         return menu
     
@@ -132,33 +132,29 @@ class AxisRegionTreeView(TreeView):
         self.model().insertItems(0, [groupItem], QModelIndex())
     
     def editSelectedRegions(self):
-        selectedRegions = self.selectedRegions()
-        if not selectedRegions:
+        selectedRegionItems = self.selectedRegionItems()
+        if not selectedRegionItems:
             return
+        selectedRegions = [item._data for item in selectedRegionItems]
         
         dlg = QDialog(self)
         dlg.setWindowTitle('Selected X axis regions')
         form = QFormLayout(dlg)
         form.setContentsMargins(5, 5, 5, 5)
         form.setSpacing(5)
+        form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
 
-        lb, ub = selectedRegions[0]['region']
-        for i in range(1, len(selectedRegions)):
-            lb_, ub_ = selectedRegions[i]['region']
-            if lb_ != lb:
-                lb = None
-            if ub_ != ub:
-                ub = None
-        if lb is not None:
-            minEdit = QLineEdit(f'{lb:.6f}')
+        region_str = selectedRegionItems[0].region_str()
+        for i in range(1, len(selectedRegionItems)):
+            region_str_ = selectedRegionItems[i].region_str()
+            if region_str_ != region_str:
+                region_str = None
+                break
+        if region_str is not None:
+            regionEdit = QLineEdit(region_str)
         else:
-            minEdit = QLineEdit('')
-        if ub is not None:
-            maxEdit = QLineEdit(f'{ub:.6f}')
-        else:
-            maxEdit = QLineEdit('')
-        form.addRow('Min', minEdit)
-        form.addRow('Max', maxEdit)
+            regionEdit = QLineEdit('')
+        form.addRow('Region', regionEdit)
 
         movable = selectedRegions[0].get('movable', True)
         for i in range(1, len(selectedRegions)):
@@ -219,43 +215,23 @@ class AxisRegionTreeView(TreeView):
         if dlg.exec() != QDialog.Accepted:
             return
         
-        lb = minEdit.text().strip()
-        ub = maxEdit.text().strip()
-        if lb != '':
-            try:
-                lb = float(lb)
-            except Exception:
-                QMessageBox.warning(self, 'Invalid range', 'Invalid range for region.', QMessageBox.StandardButton.Ok, QMessageBox.StandardButton.Ok)
-                return
-            for region in selectedRegions:
-                region['region'][0] = lb
-        if ub != '':
-            try:
-                ub = float(ub)
-            except Exception:
-                QMessageBox.warning(self, 'Invalid range', 'Invalid range for region.', QMessageBox.StandardButton.Ok, QMessageBox.StandardButton.Ok)
-                return
-            for region in selectedRegions:
-                region['region'][1] = ub
-        
-        if movableCheckBox.checkState() != Qt.CheckState.PartiallyChecked:
-            movable = movableCheckBox.isChecked()
-            for region in selectedRegions:
-                region['movable'] = movable
-        
         color = colorButton.color()
         lineColor = lineColorButton.color()
         lineWidth = lineWidthSpinBox.value()
         text = textEdit.toPlainText().strip()
         
-        for region in selectedRegions:
+        for regionItem in selectedRegionItems:
+            if regionEdit.text() != '':
+                regionItem.region = regionEdit.text()
+            if movableCheckBox.checkState() != Qt.CheckState.PartiallyChecked:
+                regionItem._data['movable'] = movableCheckBox.isChecked()
             if color is not None:
-                region['color'] = toColorStr(color)
+                regionItem._data['color'] = toColorStr(color)
             if lineColor is not None:
-                region['linecolor'] = toColorStr(lineColor)
-            region['linewidth'] = lineWidth
+                regionItem._data['linecolor'] = toColorStr(lineColor)
+            regionItem._data['linewidth'] = lineWidth
             if text != '':
-                region['text'] = text
+                regionItem._data['text'] = text
         
         self.updateTreeView()
     
@@ -281,16 +257,14 @@ class AxisRegionTreeView(TreeView):
             return
         
         dlg = QDialog(self)
-        dlg.setWindowTitle('X axis region')
+        dlg.setWindowTitle('Axis regions')
         form = QFormLayout(dlg)
         form.setContentsMargins(5, 5, 5, 5)
         form.setSpacing(5)
+        form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
 
-        lb, ub = item._data['region']
-        minEdit = QLineEdit(f'{lb:.6f}')
-        maxEdit = QLineEdit(f'{ub:.6f}')
-        form.addRow('Min', minEdit)
-        form.addRow('Max', maxEdit)
+        regionEdit = QLineEdit(item.region_str())
+        form.addRow('Region', regionEdit)
 
         movableCheckBox = QCheckBox()
         movableCheckBox.setChecked(item._data.get('movable', True))
@@ -323,14 +297,7 @@ class AxisRegionTreeView(TreeView):
         if dlg.exec() != QDialog.Accepted:
             return
         
-        try:
-            lb = float(minEdit.text())
-            ub = float(maxEdit.text())
-        except Exception:
-            QMessageBox.warning(self, 'Invalid range', 'Invalid range for region.', QMessageBox.StandardButton.Ok, QMessageBox.StandardButton.Ok)
-            return
-        
-        item._data['region'] = [lb, ub]
+        item.region = regionEdit.text()
         item._data['movable'] = movableCheckBox.isChecked()
         color = colorButton.color()
         if color is not None:
@@ -347,9 +314,8 @@ class AxisRegionTreeView(TreeView):
         self.askToRemoveItem(item)
         self.updatePlots()
     
-    def selectedRegions(self) -> list[dict]:
-        selectedItems = self.selectedItems()
-        return [item._data for item in selectedItems if item.is_region()]
+    def selectedRegionItems(self) -> list[AxisRegionTreeItem]:
+        return [item for item in self.selectedItems() if item.is_region()]
     
     def plots(self) -> list[pg.PlotItem]:
         return getattr(self, '_plots', [])
@@ -363,7 +329,7 @@ class AxisRegionTreeView(TreeView):
             return
         if not getattr(self, '_allow_plot_updates', True):
             return
-        selectedRegions = self.selectedRegions()
+        selectedRegions = [item._data for item in self.selectedRegionItems()]
         for plot in self.plots():
             xdim, ydim = getattr(plot, '_dims', ['x', 'y'])
             # clear current region items
@@ -422,10 +388,11 @@ def test_live():
         },
         {
             'group B': [
-                {'region': {'x': [3, 4]}}, 
+                {'region': {'x': [3.145234523445, 4.2345243432542245]}}, 
             ],
         },
         {'region': {'x': [35, 45]}}, 
+        {'region': {'a': [-35, 45], 'b': [-3.23523453422345, 1], 'c': [-3, -1]}}, 
     ]
     root = AxisRegionTreeItem(data)
     model = AxisRegionDndTreeModel(root)

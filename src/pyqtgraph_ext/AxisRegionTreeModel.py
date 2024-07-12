@@ -14,7 +14,7 @@ class AxisRegionTreeModel(AbstractTreeModel):
     
     def __init__(self, root: AxisRegionTreeItem = None, parent: QObject = None):
         AbstractTreeModel.__init__(self, root, parent)
-        self.setColumnLabels(['X-Axis Regions'])
+        self.setColumnLabels(['Axis Regions'])
     
     def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
         return 1
