@@ -211,9 +211,6 @@ class AxisRegion(pg.LinearRegionItem):
             if 'region' not in data:
                 data['region'] = {}
             data['region'][dim] = lims
-        # elif 'region' in data and isinstance(data['region'], dict) and len(data['region']) > 0:
-        #     dim = list(data['region'].keys())[0]
-        #     data['region'][dim] = lims
         else:
             data['region'] = lims
         data['text'] = self.text()

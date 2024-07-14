@@ -14,6 +14,8 @@ from pyqtgraph_ext import AxisRegion, XAxisRegion, YAxisRegion, AxisRegionTreeIt
 
 class AxisRegionTreeView(TreeView):
 
+    sigRegionChangeFinished = Signal()
+
     def __init__(self, parent: QObject = None) -> None:
         TreeView.__init__(self, parent)
 
@@ -358,6 +360,7 @@ class AxisRegionTreeView(TreeView):
                     regionItem._data = region
                     plot.vb.addItem(regionItem)
                     regionItem.sigRegionChangeFinished.connect(lambda item, self=self, region=region: self.updateRegion(region))
+                    regionItem.sigRegionChangeFinished.connect(lambda item, self=self: self.sigRegionChangeFinished.emit())
     
     def updateRegion(self, region: dict):
         # update region's tree view item
