@@ -1,0 +1,32 @@
+name: pypi
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Upload release to PyPI
+    permissions:
+      # This permission is needed for private repositories.
+      contents: read
+      # IMPORTANT: this permission is mandatory for trusted publishing
+      id-token: write
+
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up PDM with Python 3.x
+      uses: pdm-project/setup-pdm@v4
+      with:
+        python-version: '3.x'
+    - name: Build package
+      run: |
+        pdm build
+    - name: Publish package to PyPI
+      run: |
+        pdm publish --no-build
