@@ -83,7 +83,7 @@ class AxisRegionTreeItem(AbstractTreeItem):
             return self._data['region']
     
     @region.setter
-    def region(region: dict | tuple | str):
+    def region(self, region: dict | tuple | str):
         if isinstance(region, str):
             region = str2region(region)
         self._data['region'] = region
