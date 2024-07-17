@@ -19,7 +19,7 @@ dependencies = [
     "pyqt-ext>=1.2.7",
 ]
 readme = "README.md"
-keywords = ["pyqtgraph"]
+keywords = ["pyqtgraph", "pyqt", "pyside", "widget", "plot", "graph", "chart"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -31,6 +31,7 @@ classifiers = [
 [project.urls]
 homepage = "https://github.com/marcel-goldschen-ohm/pyqtgraph-ext"
 repository = "https://github.com/marcel-goldschen-ohm/pyqtgraph-ext"
+issues = "https://github.com/marcel-goldschen-ohm/pyqtgraph-ext/issues"
 
 
 [tool.pdm]
@@ -42,9 +43,10 @@ source = "scm"
 
 
 [tool.pdm.dev-dependencies]
-#dev = [
-#    "-e pyqt-ext @ file:///${PROJECT_ROOT}/../pyqt-ext",
-#]
+# file paths assume local dev packages are in same dir as this package
+dev = [
+    "-e pyqt-ext @ file:///${PROJECT_ROOT}/../pyqt-ext",
+]
 lint = [
     "flake8",
 ]
