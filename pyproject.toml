@@ -10,13 +10,13 @@ dynamic = ["version"]
 authors = [
     {name = "Marcel Goldschen-Ohm", email = "goldschen-ohm@utexas.edu"},
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "numpy>=1.26.2",
     "qtpy>=2.4.1",
     "qtawesome>=1.3.0",
     "pyqtgraph>=0.13.3",
-    "pyqt-ext>=1.2.7",
+    "pyqt-ext>=2024.9.2",
 ]
 readme = "README.md"
 keywords = ["pyqtgraph", "pyqt", "pyside", "widget", "plot", "graph", "chart"]
