@@ -3,9 +3,12 @@ Collection of [PyQtGraph](https://www.pyqtgraph.org) widgets/tools with custom s
 
 ![GitHub Tag](https://img.shields.io/github/v/tag/marcel-goldschen-ohm/pyqtgraph-ext?cacheSeconds=1)
 ![build-test](https://github.com/marcel-goldschen-ohm/pyqtgraph-ext/actions/workflows/build-test.yml/badge.svg)
-
 ![GitHub Release](https://img.shields.io/github/v/release/marcel-goldschen-ohm/pyqtgraph-ext?include_prereleases&cacheSeconds=1)
 ![publish](https://github.com/marcel-goldschen-ohm/pyqtgraph-ext/actions/workflows/publish.yml/badge.svg)
+
+The goal of this repo is to provide useful extensions to PyQtGraph all in one place. There are several other PyQtGraph extensions out there, but to my knowledge all of these are very limited in scope. Given this goal, **I encourage everyone to contribute your own extensions to this repo!**
+
+In addition to being useful out-of-the-box, you may find these tools to be helpful templates for rolling your own custom widgets.
 
 - [Install](#install)
 - [Documentation](#documentation)
