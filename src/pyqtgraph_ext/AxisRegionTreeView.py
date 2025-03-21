@@ -356,8 +356,8 @@ class AxisRegionTreeView(TreeView):
                     regionItem = YAxisRegion()
                     regionItem._dim = ydim
                 if regionItem is not None:
-                    regionItem.fromDict(region, regionItem._dim)
-                    regionItem._data = region
+                    regionItem.setState(region, regionItem._dim)
+                    regionItem._state = region
                     plot.vb.addItem(regionItem)
                     regionItem.sigRegionChangeFinished.connect(lambda item, self=self, region=region: self.updateRegion(region))
                     regionItem.sigRegionChangeFinished.connect(lambda item, self=self: self.sigRegionChangeFinished.emit())

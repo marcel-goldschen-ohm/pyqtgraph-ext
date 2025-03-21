@@ -42,7 +42,7 @@ def test_live():
     plot.show()
     # from pyqtgraph_ext import XAxisRegion
     # view.startDrawingItemsOfType(XAxisRegion)
-    # QTimer.singleShot(1000, lambda: view.stopDrawingItems())
+    # QTimer.singleShot(2000, lambda: view.stopDrawingItems())
     app.exec()
 
 

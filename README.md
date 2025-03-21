@@ -54,3 +54,9 @@ pip install pyqtgraph-ext@git+https://github.com/marcel-goldschen-ohm/pyqtgraph-
 
 ### Graph
 `pyqtgraph.PlotDataItem` with context menu and style dialog.
+
+## Dev Notes
+```
+pdm lock --dev
+pdm lock --prod -L pdm.prod.lock
+```

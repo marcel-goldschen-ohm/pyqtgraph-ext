@@ -8,7 +8,13 @@ from pyqtgraph_ext import View
 
 
 class Plot(pg.PlotItem):
-    """ PlotItem with matlab color scheme and custom ViewBox. """
+    """ PlotItem with matlab color scheme and custom ViewBox.
+    
+    !!! If you provide a viewBox during instantiation,
+        it will be replaced with a new ViewBox instance.
+        To get the valid viewBox reference after plot creation,
+        use `self.getViewBox()`.
+    """
 
     def __init__(self, *args, **kwargs):
         if 'viewBox' not in kwargs:

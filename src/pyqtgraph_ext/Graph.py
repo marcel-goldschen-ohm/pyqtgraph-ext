@@ -7,8 +7,8 @@ from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 import pyqtgraph as pg
 from pyqt_ext.utils import toQColor
-from pyqt_ext.graph import GraphStyle, editGraphStyle
 from pyqt_ext.widgets import TableWidgetWithCopyPaste
+from pyqtgraph_ext import GraphStyle, editGraphStyle
 
 
 class Graph(pg.PlotDataItem):
@@ -29,6 +29,17 @@ class Graph(pg.PlotDataItem):
         pg.PlotDataItem.__init__(self, *args, **kwargs)
 
         self.setZValue(1)
+
+        self.contextMenu = QMenu()
+        # self.contextMenu.addAction('Rename')
+        # self.contextMenu.addSeparator()
+        self.contextMenu.addAction('Data table', self.dataDialog)
+        self.contextMenu.addSeparator()
+        self.contextMenu.addAction('Style', self.styleDialog)
+        # self.contextMenu.addSeparator()
+        # self.contextMenu.addAction('Hide', lambda: self.setVisible(False))
+        # self.contextMenu.addSeparator()
+        # self.contextMenu.addAction('Delete', lambda: self.getViewBox().deleteItem(self))
     
     def hasCurve(self):
         pen = pg.mkPen(self.opts['pen'])
@@ -69,19 +80,10 @@ class Graph(pg.PlotDataItem):
         name = self.name()
         if name is None:
             name = self.__class__.__name__
-        self._thisItemMenu = QMenu(name)
-        # self._thisItemMenu.addAction('Rename')
-        # self._thisItemMenu.addSeparator()
-        self._thisItemMenu.addAction('Data table', self.dataDialog)
-        self._thisItemMenu.addSeparator()
-        self._thisItemMenu.addAction('Style', self.styleDialog)
-        # self._thisItemMenu.addSeparator()
-        # self._thisItemMenu.addAction('Hide', lambda: self.setVisible(False))
-        # self._thisItemMenu.addSeparator()
-        # self._thisItemMenu.addAction('Delete', lambda: self.getViewBox().deleteItem(self))
+        self.contextMenu.setTitle(name)
 
         self.menu = QMenu()
-        self.menu.addMenu(self._thisItemMenu)
+        self.menu.addMenu(self.contextMenu)
 
         # Let the scene add on to the end of our context menu (this is optional)
         self.menu.addSection('View')
@@ -105,23 +107,23 @@ class Graph(pg.PlotDataItem):
         symbolPen = pg.mkPen(self.opts['symbolPen'])
         symbolBrush = pg.mkBrush(self.opts['symbolBrush'])
 
-        style.setColor(pen.color())
-        style.setLineStyle(pen.style())
-        style.setLineWidth(pen.widthF())
-        style.setMarker(self.opts.get('symbol', 'none'))
-        style.setMarkerSize(self.opts.get('symbolSize', 10))
-        style.setMarkerEdgeStyle(symbolPen.style())
-        style.setMarkerEdgeWidth(symbolPen.widthF())
+        style['color'] = pen.color()
+        style['linestyle'] = pen.style()
+        style['linewidth'] = pen.widthF()
+        style['marker'] = self.opts.get('symbol', None)
+        style['markersize'] = self.opts.get('symbolSize', 10)
+        style['markeredgestyle'] = symbolPen.style()
+        style['markeredgewidth'] = symbolPen.widthF()
         if symbolPen.color() != pen.color():
-            style.setMarkerEdgeColor(symbolPen.color())
+            style['markeredgecolor'] = symbolPen.color()
         if symbolBrush.color() != symbolPen.color():
-            style.setMarkerFaceColor(symbolBrush.color())
+            style['markerfacecolor'] = symbolBrush.color()
 
         return style
     
     def setGraphStyle(self, style: GraphStyle, colorIndex: int | None = None) -> int | None:
         # color
-        color = style.color()
+        color = style['color']
         if color is None:
             if colorIndex is not None:
                 try:
@@ -131,32 +133,38 @@ class Graph(pg.PlotDataItem):
                     color = toQColor(color)
                     colorIndex += 1
                 except:
-                    color = toQColor(self.graphStyle().color())
+                    oldStyle = self.graphStyle()
+                    color = toQColor(oldStyle['color'])
             else:
-                color = toQColor(self.graphStyle().color())
+                oldStyle = self.graphStyle()
+                color = toQColor(oldStyle['color'])
         else:
             color = toQColor(color)
 
         # line
-        lineStyle: str = style.lineStyle()
-        linePenStyle: Qt.PenStyle = GraphStyle.penstyles[GraphStyle.linestyles.index(lineStyle)]
-        lineWidth = style.lineWidth()
+        lineStyle: str = style['linestyle']
+        linePenStyle: Qt.PenStyle = GraphStyle.penStyles[GraphStyle.lineStyles.index(lineStyle)]
+        lineWidth = style['linewidth']
         linePen = pg.mkPen(color=color, width=lineWidth, style=linePenStyle)
         self.setPen(linePen)
 
         # marker
-        marker = style.marker()
-        if marker == 'none':
+        marker = style['marker']
+        if isinstance(marker, str) and marker.lower() == 'none':
             marker = None
+        marker_labels = list(GraphStyle.pyqtgraphMarkers.keys())
+        marker_keys = list(GraphStyle.pyqtgraphMarkers.values())
+        if marker in marker_labels:
+            marker = marker_keys[marker_labels.index(marker)]
         self.setSymbol(marker)
         
-        markerSize = style.markerSize()
+        markerSize = style['markersize']
         self.setSymbolSize(markerSize)
 
-        markerEdgeStyle = style.markerEdgeStyle()
-        markerEdgePenStyle: Qt.PenStyle = GraphStyle.penstyles[GraphStyle.linestyles.index(markerEdgeStyle)]
-        markerEdgeWidth = style.markerEdgeWidth()
-        markerEdgeColor = style.markerEdgeColor()
+        markerEdgeStyle = style['markeredgestyle']
+        markerEdgePenStyle: Qt.PenStyle = GraphStyle.penStyles[GraphStyle.lineStyles.index(markerEdgeStyle)]
+        markerEdgeWidth = style['markeredgewidth']
+        markerEdgeColor = style['markeredgecolor']
         if markerEdgeColor is None:
             markerEdgeColor = color
         else:
@@ -164,7 +172,7 @@ class Graph(pg.PlotDataItem):
         symbolPen = pg.mkPen(color=markerEdgeColor, width=markerEdgeWidth, style=markerEdgePenStyle)
         self.setSymbolPen(symbolPen)
 
-        markerFaceColor = style.markerFaceColor()
+        markerFaceColor = style['markerfacecolor']
         if markerFaceColor is None:
             markerFaceColor = markerEdgeColor
         else:

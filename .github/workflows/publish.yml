@@ -19,17 +19,22 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up PDM with Python 3.x
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Set up PDM
       uses: pdm-project/setup-pdm@v4
       with:
         python-version: '3.x'
+    
     - name: Install dependencies
       run: |
-        pdm install -L pdm.prod.lock
+        pdm install
+    
     - name: Build package
       run: |
         pdm build
+    
     - name: Publish package to PyPI
       run: |
         pdm publish --no-build
