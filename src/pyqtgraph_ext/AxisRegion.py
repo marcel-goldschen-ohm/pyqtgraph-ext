@@ -16,6 +16,10 @@ class AxisRegion(pg.LinearRegionItem):
     self.sigRegionChangeFinished is emitted when the item is moved or resized.
     """
 
+    sigRegionDragFinished = Signal(object)
+    sigEditingFinished = Signal(object)
+    sigRequestDeletion = Signal(object)
+
     def __init__(self, *args, **kwargs):
         if 'orientation' not in kwargs:
             kwargs['orientation'] = 'vertical'
@@ -33,47 +37,30 @@ class AxisRegion(pg.LinearRegionItem):
 
         self._textLabelItem: pg.InfLineLabel = pg.InfLineLabel(self.lines[0], text='', movable=True, position=1, anchors=[(0,0), (0,0)])
         self._textLabelItem.setVisible(False)
+        self.setFontColor(QColor.fromRgbF(0.15, 0.15, 0.15))
 
         self.lines[0].sigClicked.connect(self.onEdgeClicked)
         self.lines[1].sigClicked.connect(self.onEdgeClicked)
 
+        self._group = ''
+
         # update label position when region is moved or resized
         # TODO: disallow dragging label outside of viewbox
         self.sigRegionChanged.connect(self.updateLabelPosition)
-        self.sigRegionChangeFinished.connect(lambda self=self: self.storeState())
+        # self.sigRegionChangeFinished.connect(lambda self=self: self.storeState())
 
         self.setZValue(11)
     
-    def getState(self, state_to_update: dict = None, dim: str = None) -> dict:
+    def getState(self, dim: str = None) -> dict:
         """ Return hashable dict for saving and restoring state.
-
-        Optionally update an existing state dict with new values.
         """
-        state = {
+        return {
             'region': self.getRegion() if dim is None else {dim: self.getRegion()},
             'text': self.text(),
             'movable': self.movable,
-            'format': {
-                'facecolor': toColorStr(self.faceColor()),
-                'edgecolor': toColorStr(self.edgeColor()),
-                'edgewidth': self.edgeWidth(),
-                'facehovercolor': toColorStr(self.faceHoverColor()),
-                'edgehovercolor': toColorStr(self.edgeHoverColor()),
-                'edgehoverwidth': self.edgeHoverWidth(),
-                'font': self.font().toString(),
-                'fontsize': self.fontSize(),
-                'fontcolor': toColorStr(self.fontColor()),
-            },
+            'group': self.group(),
+            'format': self.getFormat(),
         }
-        if state_to_update is not None:
-            for key in state:
-                if (key == 'region') and ('region' in state_to_update) and isinstance(state_to_update['region'], dict):
-                    if dim is None:
-                        raise KeyError('Dimension must be specified when region is a dict')
-                    state_to_update['region'][dim] = state['region'][dim]
-                else:
-                    state_to_update[key] = state[key]
-        return state
     
     def setState(self, state: dict, dim: str = None):
         """ Restore state from hashable dict.
@@ -90,42 +77,111 @@ class AxisRegion(pg.LinearRegionItem):
                 self.setText(value)
             elif key == 'movable':
                 self.setMovable(value)
+            elif key == 'group':
+                self.setGroup(value)
             elif key == 'format':
-                fmt = value
-                for key, value in fmt.items():
-                    key = key.lower()
-                    if key == 'facecolor':
-                        self.setFaceColor(toQColor(value))
-                    elif key == 'edgecolor':
-                        self.setEdgeColor(toQColor(value))
-                    elif key == 'edgewidth':
-                        self.setEdgeWidth(value)
-                    elif key == 'facehovercolor':
-                        self.setFaceHoverColor(toQColor(value))
-                    elif key == 'edgehovercolor':
-                        self.setEdgeHoverColor(toQColor(value))
-                    elif key == 'edgehoverwidth':
-                        self.setEdgeHoverWidth(value)
-                    elif key == 'font':
-                        font = QFont()
-                        font.fromString(value)
-                        self.setFont(font)
-                    elif key == 'fontsize':
-                        self.setFontSize(value)
-                    elif key == 'fontcolor':
-                        self.setFontColor(toQColor(value))
+                self.setFormat(value)
+    
+    def getFormat(self) -> dict:
+        """ Return hashable dict for saving and restoring state.
+        """
+        return {
+            'facecolor': toColorStr(self.faceColor()),
+            'edgecolor': toColorStr(self.edgeColor()),
+            'edgewidth': self.edgeWidth(),
+            'facehovercolor': toColorStr(self.faceHoverColor()),
+            'edgehovercolor': toColorStr(self.edgeHoverColor()),
+            'edgehoverwidth': self.edgeHoverWidth(),
+            'font': self.font().toString(),
+            'fontsize': self.fontSize(),
+            'fontcolor': toColorStr(self.fontColor()),
+        }
+    
+    def setFormat(self, state: dict):
+        """ Restore state from hashable dict.
+        """
+        for key, value in state.items():
+            key = key.lower()
+            if key == 'facecolor':
+                self.setFaceColor(toQColor(value))
+            elif key == 'edgecolor':
+                self.setEdgeColor(toQColor(value))
+            elif key == 'edgewidth':
+                self.setEdgeWidth(value)
+            elif key == 'facehovercolor':
+                self.setFaceHoverColor(toQColor(value))
+            elif key == 'edgehovercolor':
+                self.setEdgeHoverColor(toQColor(value))
+            elif key == 'edgehoverwidth':
+                self.setEdgeHoverWidth(value)
+            elif key == 'font':
+                font = QFont()
+                font.fromString(value)
+                self.setFont(font)
+            elif key == 'fontsize':
+                self.setFontSize(value)
+            elif key == 'fontcolor':
+                self.setFontColor(toQColor(value))
     
     def storeState(self):
-        if not hasattr(self, '_state'):
-            self._state = {}
         dim = getattr(self, '_dim', None)
-        self.getState(state_to_update=self._state, dim=dim)
+        self._state = self.getState(dim=dim)
     
     def restoreState(self):
         if not hasattr(self, '_state'):
             raise AttributeError('State has not been stored')
         dim = getattr(self, '_dim', None)
         self.setState(self._state, dim=dim)
+    
+    # def setRegion(self, rgn):
+    #     """ Override default method to avoid emitting sigRegionChangeFinished
+    #     which we only want to emit after a drag event.
+    #     """
+    #     if self.lines[0].value() == rgn[0] and self.lines[1].value() == rgn[1]:
+    #         return
+    #     self.blockLineSignal = True
+    #     self.lines[0].setValue(rgn[0])
+    #     # self.blockLineSignal = False
+    #     self.lines[1].setValue(rgn[1])
+    #     self.blockLineSignal = False
+    #     self.lineMoved(0)
+    #     self.lineMoved(1)
+    #     self.lineMoveFinished()
+
+    def mouseDragEvent(self, ev):
+        """ Add new signal for when drag is finished.
+        """
+        if not self.movable or ev.button() != Qt.MouseButton.LeftButton:
+            return
+        ev.accept()
+        
+        if ev.isStart():
+            bdp = ev.buttonDownPos()
+            self.cursorOffsets = [l.pos() - bdp for l in self.lines]
+            self.startPositions = [l.pos() for l in self.lines]
+            self.moving = True
+            
+        if not self.moving:
+            return
+            
+        self.blockLineSignal = True  # only want to update once
+        for i, l in enumerate(self.lines):
+            l.setPos(self.cursorOffsets[i] + ev.pos())
+        self.prepareGeometryChange()
+        self.blockLineSignal = False
+        
+        if ev.isFinish():
+            self.moving = False
+            self.sigRegionChangeFinished.emit(self)
+            self.sigRegionDragFinished.emit(self)
+        else:
+            self.sigRegionChanged.emit(self)
+    
+    def group(self):
+        return self._group
+    
+    def setGroup(self, group):
+        self._group = group
     
     def faceColor(self) -> QColor:
         return self.brush.color()
@@ -184,7 +240,7 @@ class AxisRegion(pg.LinearRegionItem):
     def text(self):
         try:
             return self._textLabelItem.format
-        except Exception:
+        except:
             return ''
 
     def setText(self, text: str):
@@ -211,6 +267,9 @@ class AxisRegion(pg.LinearRegionItem):
     def setFontColor(self, color: QColor):
         self._textLabelItem.setColor(color)
     
+    def copyFormat(self, other: AxisRegion):
+        self.setFormat(other.getFormat())
+    
     def updateLabelPosition(self):
         if self._textLabelItem is not None:
             self._textLabelItem.updatePosition()
@@ -229,6 +288,9 @@ class AxisRegion(pg.LinearRegionItem):
                 if self.raiseContextMenu(event):
                     event.accept()
     
+    # def mouseReleaseEvent(self, event):
+    #     print('mouseReleaseEvent')
+    
     def raiseContextMenu(self, event):
         menu = self.getContextMenus(event)
         pos = event.screenPos()
@@ -240,11 +302,10 @@ class AxisRegion(pg.LinearRegionItem):
 
         self._thisItemMenu = QMenu(self.__class__.__name__)
         self._thisItemMenu.addAction('Edit', lambda: self.editDialog())
-        # the XAxisRegionTreeView manager will handle this...
         # self._thisItemMenu.addSeparator()
         # self._thisItemMenu.addAction('Hide', lambda: self.setVisible(False))
-        # self._thisItemMenu.addSeparator()
-        # self._thisItemMenu.addAction('Delete', lambda: self.getViewBox().deleteItem(self))
+        self._thisItemMenu.addSeparator()
+        self._thisItemMenu.addAction('Delete', lambda: self.sigRequestDeletion.emit(self))
         self.menu.addMenu(self._thisItemMenu)
 
         # Let the scene add on to the end of our context menu (this is optional)
@@ -253,106 +314,8 @@ class AxisRegion(pg.LinearRegionItem):
         return self.menu
     
     def editDialog(self, parent: QWidget = None):
-        if parent is None:
-            parent = self.getViewWidget()
-        dlg = QDialog(parent)
-        dlg.setWindowTitle(self.__class__.__name__)
-        form = QFormLayout(dlg)
-        form.setContentsMargins(5, 5, 5, 5)
-        form.setSpacing(5)
-
-        limits = sorted(self.getRegion())
-        minEdit = QLineEdit(f'{limits[0]:.6f}')
-        maxEdit = QLineEdit(f'{limits[1]:.6f}')
-        form.addRow('Min', minEdit)
-        form.addRow('Max', maxEdit)
-
-        movableCheckBox = QCheckBox()
-        movableCheckBox.setChecked(self.movable)
-        form.addRow('Movable', movableCheckBox)
-
-        text = self.text()
-        textEdit = QTextEdit()
-        if text is not None and text != '':
-            textEdit.setPlainText(text)
-        form.addRow('Text', textEdit)
-
-        faceColorButton = ColorButton(self.faceColor())
-        edgeColorButton = ColorButton(self.edgeColor())
-        edgeWidthSpinBox = QDoubleSpinBox()
-        edgeWidthSpinBox.setValue(self.edgeWidth())
-
-        faceHoverColorButton = ColorButton(self.faceHoverColor())
-        edgeHoverColorButton = ColorButton(self.edgeHoverColor())
-        edgeHoverWidthSpinBox = QDoubleSpinBox()
-        edgeHoverWidthSpinBox.setValue(self.edgeHoverWidth())
-
-        fontColorButton = ColorButton(self.fontColor())
-        fontSizeSpinBox = QDoubleSpinBox()
-        fontSizeSpinBox.setValue(self.fontSize())
-
-        formatLayout = QFormLayout()
-        formatLayout.setContentsMargins(5, 5, 5, 5)
-        formatLayout.setSpacing(5)
-        formatLayout.addRow('Face Color', faceColorButton)
-        formatLayout.addRow('Edge Color', edgeColorButton)
-        formatLayout.addRow('Edge Width', edgeWidthSpinBox)
-        formatLayout.addRow('Font Color', fontColorButton)
-        formatLayout.addRow('Font Size', fontSizeSpinBox)
-
-        hoverLayout = QFormLayout()
-        hoverLayout.setContentsMargins(5, 5, 5, 5)
-        hoverLayout.setSpacing(5)
-        hoverLayout.addRow('Face Hover Color', faceHoverColorButton)
-        hoverLayout.addRow('Edge Hover Color', edgeHoverColorButton)
-        hoverLayout.addRow('Edge Hover Width', edgeHoverWidthSpinBox)
-
-        hoverLayoutWrapper = QVBoxLayout()
-        hoverLayoutWrapper.addLayout(hoverLayout)
-        hoverLayoutWrapper.addStretch()
-
-        formatLayoutWrapper = QHBoxLayout()
-        formatLayoutWrapper.addLayout(formatLayout)
-        formatLayoutWrapper.addLayout(hoverLayoutWrapper)
-
-        formatSection = CollapsibleSection(title='Format')
-        formatSection.setContentLayout(formatLayoutWrapper)
-        form.addRow(formatSection)
-
-        btns = QDialogButtonBox()
-        btns.setStandardButtons(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
-        btns.accepted.connect(dlg.accept)
-        btns.rejected.connect(dlg.reject)
-        form.addRow(btns)
-
-        dlg.move(QCursor.pos())
-        dlg.setWindowModality(Qt.ApplicationModal)
-        if dlg.exec() != QDialog.Accepted:
-            return
-        
-        self.setMovable(movableCheckBox.isChecked())
-
-        text = textEdit.toPlainText()
-        self.setText(text)
-
-        self.setFaceColor(faceColorButton.color())
-        self.setEdgeColor(edgeColorButton.color())
-        self.setEdgeWidth(edgeWidthSpinBox.value())
-        self.setFontSize(fontSizeSpinBox.value())
-        self.setFontColor(fontColorButton.color())
-
-        self.setFaceHoverColor(faceHoverColorButton.color())
-        self.setEdgeHoverColor(edgeHoverColorButton.color())
-        self.setEdgeHoverWidth(edgeHoverWidthSpinBox.value())
-        
-        # do this last so that the sigRegionChanged signal can be used for all things in this dialog
-        new_limits = sorted([float(minEdit.text()), float(maxEdit.text())])
-        if new_limits != limits:
-            self.setRegion(new_limits)
-        else:
-            # in case region was unchanged, we still want this signal to be emitted
-            # in case any other properties were changed
-            self.sigRegionChangeFinished.emit(self)
+        editAxisRegion(self, parent=parent)
+        self.sigEditingFinished.emit(self)
 
 
 class XAxisRegion(AxisRegion):
@@ -388,8 +351,61 @@ class AxisRegionPanel(QWidget):
         self._movableCheckBox = QCheckBox()
         form.addRow('Movable', self._movableCheckBox)
 
+        self._groupEdit = QLineEdit()
+        form.addRow('Group', self._groupEdit)
+
         self._textEdit = QTextEdit()
         form.addRow('Text', self._textEdit)
+
+        self._formatPanel = AxisRegionFormatPanel()
+        self._formatPanelWrapperLayout = QVBoxLayout()
+        self._formatPanelWrapperLayout.setContentsMargins(0, 0, 0, 0)
+        self._formatPanelWrapperLayout.addWidget(self._formatPanel)
+
+        self._formatSection = CollapsibleSection(title='Format')
+        self._formatSection.setContentLayout(self._formatPanelWrapperLayout)
+        form.addRow(self._formatSection)
+
+        # default settings
+        self.setState(AxisRegion().getState())
+    
+    def getState(self):
+        state = {}
+
+        if self._minEdit.text() != '' and self._maxEdit.text() != '':
+            state['region'] = tuple(sorted([float(self._minEdit.text()), float(self._maxEdit.text())]))
+
+        if self._movableCheckBox.checkState() != Qt.CheckState.PartiallyChecked:
+            state['movable'] = self._movableCheckBox.isChecked()
+        
+        state['group'] = self._groupEdit.text()
+        
+        state['text'] = self._textEdit.toPlainText()
+
+        state['format'] = self._formatPanel.getFormat()
+
+        return state
+
+    def setState(self, state):
+        for key, value in state.items():
+            key = key.lower()
+            if key == 'region':
+                self._minEdit.setText(f'{value[0]:.6f}')
+                self._maxEdit.setText(f'{value[1]:.6f}')
+            elif key == 'movable':
+                self._movableCheckBox.setChecked(value)
+            elif key == 'group':
+                self._groupEdit.setText(str(value))
+            elif key == 'text':
+                self._textEdit.setPlainText(value)
+            elif key == 'format':
+                self._formatPanel.setFormat(value)
+
+
+class AxisRegionFormatPanel(QWidget):
+
+    def __init__(self, *args, **kwargs):
+        QWidget.__init__(self, *args, **kwargs)
 
         self._faceColorButton = ColorButton()
         self._edgeColorButton = ColorButton()
@@ -426,25 +442,14 @@ class AxisRegionPanel(QWidget):
         self._formatLayoutWrapper.addLayout(self._formatLayout)
         self._formatLayoutWrapper.addLayout(self._hoverLayoutWrapper)
 
-        self._formatSection = CollapsibleSection(title='Format')
-        self._formatSection.setContentLayout(self._formatLayoutWrapper)
-        form.addRow(self._formatSection)
+        self.setLayout(self._formatLayoutWrapper)
 
         # default settings
-        self.setState(AxisRegion().getState())
+        self.setFormat(AxisRegion().getFormat())
     
-    def getState(self):
-        state = {}
-
-        if self._minEdit.text() != '' and self._maxEdit.text() != '':
-            state['region'] = tuple(sorted([float(self._minEdit.text()), float(self._maxEdit.text())]))
-
-        if self._movableCheckBox.checkState() != Qt.CheckState.PartiallyChecked:
-            state['movable'] = self._movableCheckBox.isChecked()
-        
-        state['text'] = self._textEdit.toPlainText()
-
+    def getFormat(self):
         fmt = {}
+
         faceColor = self._faceColorButton.color()
         edgeColor = self._edgeColorButton.color()
         edgeWidth = self._edgeWidthSpinBox.value()
@@ -471,43 +476,33 @@ class AxisRegionPanel(QWidget):
         if edgeHoverWidth > 0:
             fmt['edgehoverwidth'] = edgeHoverWidth
 
-        state['format'] = fmt
+        return fmt
 
-        return state
-
-    def setState(self, state):
-        for key, value in state.items():
+    def setFormat(self, fmt: dict):
+        for key, value in fmt.items():
             key = key.lower()
-            if key == 'region':
-                self._minEdit.setText(f'{value[0]:.6f}')
-                self._maxEdit.setText(f'{value[1]:.6f}')
-            elif key == 'movable':
-                self._movableCheckBox.setChecked(value)
-            elif key == 'text':
-                self._textEdit.setPlainText(value)
-            elif key == 'format':
-                fmt = value
-                for key, value in fmt.items():
-                    key = key.lower()
-                    if key == 'facecolor':
-                        self._faceColorButton.setColor(toQColor(value))
-                    elif key == 'edgecolor':
-                        self._edgeColorButton.setColor(toQColor(value))
-                    elif key == 'edgewidth':
-                        self._edgeWidthSpinBox.setValue(value)
-                    elif key == 'facehovercolor':
-                        self._faceHoverColorButton.setColor(toQColor(value))
-                    elif key == 'edgehovercolor':
-                        self._edgeHoverColorButton.setColor(toQColor(value))
-                    elif key == 'edgehoverwidth':
-                        self._edgeHoverWidthSpinBox.setValue(value)
-                    elif key == 'fontsize':
-                        self._fontSizeSpinBox.setValue(value)
-                    elif key == 'fontcolor':
-                        self._fontColorButton.setColor(toQColor(value))
+            if key == 'facecolor':
+                self._faceColorButton.setColor(toQColor(value))
+            elif key == 'edgecolor':
+                self._edgeColorButton.setColor(toQColor(value))
+            elif key == 'edgewidth':
+                self._edgeWidthSpinBox.setValue(value)
+            elif key == 'facehovercolor':
+                self._faceHoverColorButton.setColor(toQColor(value))
+            elif key == 'edgehovercolor':
+                self._edgeHoverColorButton.setColor(toQColor(value))
+            elif key == 'edgehoverwidth':
+                self._edgeHoverWidthSpinBox.setValue(value)
+            elif key == 'fontsize':
+                self._fontSizeSpinBox.setValue(value)
+            elif key == 'fontcolor':
+                self._fontColorButton.setColor(toQColor(value))
 
 
-def editAxisRegion(region: AxisRegion, parent: QWidget = None, title: str = None):
+def editAxisRegion(region: AxisRegion = None, parent: QWidget = None, title: str = None) -> dict | None:
+    if region is None:
+        region = AxisRegion()
+    
     panel = AxisRegionPanel()
     panel.layout().setContentsMargins(0, 0, 0, 0)
     panel.setState(region.getState())
@@ -530,22 +525,18 @@ def editAxisRegion(region: AxisRegion, parent: QWidget = None, title: str = None
     if dlg.exec() != QDialog.Accepted:
         return
     
-    state = panel.getState()
-    region.setState(state)
+    region.setState(panel.getState())
+
+    return region.getState()
 
 
-def editMultipleAxisRegions(regions: list[AxisRegion], parent: QWidget = None, title: str = None):
-    panel = AxisRegionPanel()
+def formatAxisRegion(region: AxisRegion = None, parent: QWidget = None, title: str = None) -> dict | None:
+    if region is None:
+        region = AxisRegion()
+    
+    panel = AxisRegionFormatPanel()
     panel.layout().setContentsMargins(0, 0, 0, 0)
-    states = [region.getState() for region in regions]
-    panel.setState(states[0])
-    for state in states[1:]:
-        if state['region'] != states[0]['region']:
-            self._minEdit.setText('')
-            self._maxEdit.setText('')
-        if state['movable'] != states[0]['movable']:
-            self._movableCheckBox.setCheckState(Qt.PartiallyChecked)
-    panel.setState(shared_state)
+    panel.setFormat(region.getFormat())
 
     dlg = QDialog(parent)
     vbox = QVBoxLayout(dlg)
@@ -564,6 +555,47 @@ def editMultipleAxisRegions(regions: list[AxisRegion], parent: QWidget = None, t
     
     if dlg.exec() != QDialog.Accepted:
         return
+    
+    region.setFormat(panel.getFormat())
+
+    return region.getFormat()
+
+
+# def editMultipleAxisRegions(regions: list[AxisRegion], parent: QWidget = None, title: str = None):
+#     panel = AxisRegionPanel()
+#     panel.layout().setContentsMargins(0, 0, 0, 0)
+#     states = [region.getState() for region in regions]
+#     panel.setState(states[0])
+#     for state in states[1:]:
+#         if state['region'] != states[0]['region']:
+#             self._minEdit.setText('')
+#             self._maxEdit.setText('')
+#         if state['movable'] != states[0]['movable']:
+#             self._movableCheckBox.setCheckState(Qt.PartiallyChecked)
+#         if state['text'] != states[0]['text']:
+#             self._textEdit.setPlainText('')
+#         for key in state['format']:
+#             if key not in states[0]['format'] or state['format'][key] != states[0]['format'][key]:
+#                 pass
+#     panel.setState(shared_state)
+
+#     dlg = QDialog(parent)
+#     vbox = QVBoxLayout(dlg)
+#     vbox.addWidget(panel)
+
+#     btns = QDialogButtonBox()
+#     btns.setStandardButtons(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
+#     btns.accepted.connect(dlg.accept)
+#     btns.rejected.connect(dlg.reject)
+#     vbox.addWidget(btns)
+#     vbox.addStretch()
+
+#     if title is not None:
+#         dlg.setWindowTitle(title)
+#     dlg.setWindowModality(Qt.ApplicationModal)
+    
+#     if dlg.exec() != QDialog.Accepted:
+#         return
 
 
 def test_live():

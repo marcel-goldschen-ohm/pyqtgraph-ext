@@ -1,7 +1,7 @@
 from pyqtgraph_ext.GraphStyle import GraphStyle, GraphStylePanel, editGraphStyle
 from pyqtgraph_ext.Graph import Graph
 
-from pyqtgraph_ext.AxisRegion import AxisRegion, XAxisRegion, YAxisRegion
+from pyqtgraph_ext.AxisRegion import AxisRegion, XAxisRegion, YAxisRegion, editAxisRegion, formatAxisRegion
 from pyqtgraph_ext.AxisRegionTreeItem import AxisRegionTreeItem
 from pyqtgraph_ext.AxisRegionTreeModel import AxisRegionTreeModel, AxisRegionDndTreeModel
 from pyqtgraph_ext.AxisRegionTreeView import AxisRegionTreeView

@@ -80,6 +80,8 @@ class PlotGrid(pg.GraphicsLayoutWidget):
             self.applyRegularLayout()
     
     def applyRegularLayout(self) -> None:
+        if self.rowCount() * self.columnCount() <= 1:
+            return
         viewWidth = 0
         n = 0
         for col in range(self.columnCount()):
